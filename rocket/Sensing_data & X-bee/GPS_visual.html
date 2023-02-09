@@ -1,0 +1,81 @@
+<div id="map" style="width:100%;height:500px;"></div>
+<script>
+var mapContainer = document.getElementById('map'), // 지도를 표시할 div  
+    mapOption = { 
+        center: new kakao.maps.LatLng(37.631597, 127.076290), // 지도의 중심좌표
+        level: 1 // 지도의 확대 레벨
+    };
+
+var map = new kakao.maps.Map(mapContainer, mapOption); // 지도를 생성합니다
+ 
+// 마커를 표시할 위치와 title 객체 배열입니다 
+var positions = [
+{latlng: new kakao.maps.LatLng(37.631168, 127.076599)},
+{latlng: new kakao.maps.LatLng(37.631160, 127.076599)},
+{latlng: new kakao.maps.LatLng(37.631149, 127.076591)},
+{latlng: new kakao.maps.LatLng(37.631137, 127.076591)},
+{latlng: new kakao.maps.LatLng(37.631137, 127.076591)},
+{latlng: new kakao.maps.LatLng(37.631126, 127.076591)},
+{latlng: new kakao.maps.LatLng(37.631126, 127.076591)},
+{latlng: new kakao.maps.LatLng(37.631118, 127.076583)},
+{latlng: new kakao.maps.LatLng(37.631111, 127.076576)},
+{latlng: new kakao.maps.LatLng(37.631103, 127.076576)},
+{latlng: new kakao.maps.LatLng(37.631095, 127.076568)},
+{latlng: new kakao.maps.LatLng(37.631095, 127.076568)},
+{latlng: new kakao.maps.LatLng(37.631084, 127.076568)},
+{latlng: new kakao.maps.LatLng(37.631084, 127.076568)},
+{latlng: new kakao.maps.LatLng(37.631076, 127.076560)},
+{latlng: new kakao.maps.LatLng(37.631065, 127.076560)},
+{latlng: new kakao.maps.LatLng(37.631057, 127.076560)},
+{latlng: new kakao.maps.LatLng(37.631038, 127.076553)},
+{latlng: new kakao.maps.LatLng(37.631038, 127.076553)},
+{latlng: new kakao.maps.LatLng(37.631031, 127.076553)},
+{latlng: new kakao.maps.LatLng(37.631031, 127.076553)},
+{latlng: new kakao.maps.LatLng(37.631019, 127.076553)},
+{latlng: new kakao.maps.LatLng(37.631008, 127.076545)},
+{latlng: new kakao.maps.LatLng(37.630996, 127.076545)},
+{latlng: new kakao.maps.LatLng(37.630985, 127.076530)},
+{latlng: new kakao.maps.LatLng(37.630985, 127.076530)},
+{latlng: new kakao.maps.LatLng(37.630966, 127.076522)},
+{latlng: new kakao.maps.LatLng(37.630966, 127.076522)},
+{latlng: new kakao.maps.LatLng(37.630950, 127.076515)},
+{latlng: new kakao.maps.LatLng(37.630943, 127.076507)},
+{latlng: new kakao.maps.LatLng(37.630928, 127.076492)},
+{latlng: new kakao.maps.LatLng(37.630912, 127.076477)},
+{latlng: new kakao.maps.LatLng(37.630912, 127.076477)},
+{latlng: new kakao.maps.LatLng(37.630905, 127.076469)},
+{latlng: new kakao.maps.LatLng(37.630905, 127.076469)},
+{latlng: new kakao.maps.LatLng(37.630893, 127.076461)},
+{latlng: new kakao.maps.LatLng(37.630878, 127.076454)},
+{latlng: new kakao.maps.LatLng(37.630870, 127.076446)},
+{latlng: new kakao.maps.LatLng(37.630859, 127.076446)},
+{latlng: new kakao.maps.LatLng(37.630859, 127.076446)},
+{latlng: new kakao.maps.LatLng(37.630851, 127.076446)},
+{latlng: new kakao.maps.LatLng(37.630851, 127.076446)},
+{latlng: new kakao.maps.LatLng(37.630847, 127.076446)},
+{latlng: new kakao.maps.LatLng(37.630836, 127.076454)},
+{latlng: new kakao.maps.LatLng(37.630828, 127.076461)},
+{latlng: new kakao.maps.LatLng(37.630813, 127.076477)},
+{latlng: new kakao.maps.LatLng(37.630813, 127.076477)},
+
+];
+
+// 마커 이미지의 이미지 주소입니다
+var imageSrc = "https://cdn-icons-png.flaticon.com/512/868/868876.png"; 
+    
+for (var i = 0; i < positions.length; i ++) 
+{
+    // 마커 이미지의 이미지 크기 입니다
+    var imageSize = new kakao.maps.Size(15, 15); 
+    // 마커 이미지를 생성합니다    
+    var markerImage = new kakao.maps.MarkerImage(imageSrc, imageSize); 
+    // 마커를 생성합니다
+    var marker = new kakao.maps.Marker({
+        map: map, // 마커를 표시할 지도
+        position: positions[i].latlng, // 마커를 표시할 위치
+        title : positions[i].title, // 마커의 타이틀, 마커에 마우스를 올리면 타이틀이 표시됩니다
+        image : markerImage // 마커 이미지 
+    });
+}
+    
+</script>
