@@ -1,7 +1,5 @@
-/* {latlng: new kakao.maps.LatLng(Latitude, Longitude)},
-   {latlng: new kakao.maps.LatLng(Latitude, Latitude)},
-   ... 
-   Serial output in the above format */
+// Show Latitude only
+
 
 #include <SoftwareSerial.h>
 
@@ -32,7 +30,7 @@ void loop()
   unsigned short sentences, failed;
 
   // For one second we parse GPS data and report some key values
-  for (unsigned long start = millis(); millis() - start < 300;)
+  for (unsigned long start = millis(); millis() - start < 50;)
   {
     while (ss.available())
     {
@@ -48,11 +46,7 @@ void loop()
     float flat, flon;
     unsigned long age;
     gps.f_get_position(&flat, &flon, &age);
-    Serial.print("{latlng: new kakao.maps.LatLng(");
-    Serial.print(flat == TinyGPS::GPS_INVALID_F_ANGLE ? 0.0 : flat, 6);
-    Serial.print(", ");
-    Serial.print(flon == TinyGPS::GPS_INVALID_F_ANGLE ? 0.0 : flon, 6);
-    Serial.println(")},");
+    Serial.println(flat == TinyGPS::GPS_INVALID_F_ANGLE ? 0.0 : flat, 6);
   }
   gps.stats(&chars, &sentences, &failed);
   if (chars == 0)
