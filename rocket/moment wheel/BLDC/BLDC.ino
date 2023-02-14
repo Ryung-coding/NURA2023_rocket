@@ -23,26 +23,29 @@ void setup()
   
 }
 
-
 void loop() 
 {
   //int PWM = constrain(map(duty, 0, 100, 0, ), 0, 4032); 
-  for (motor_speed = 1613; motor_speed<1935;motor_speed+=100)// 1000us에서 1935us 까지 증가
+  for (motor_speed = 1613; motor_speed<1935;motor_speed+=300)// 1000us에서 1935us 까지 증가
   {
      pwm.setPWM(0,0,motor_speed); //1당 0.620us
-    delay(100);
+    delay(30);
     Serial.print(motor_speed);
     Serial.print(" = ");
     Serial.println(map(motor_speed, 1613, 3225, 0, 100));
+    pwm.setPWM(0,0,0);
+    delay(100);
   }
 
-    for (motor_speed = 1935; motor_speed>1613;motor_speed-=100)
+    for (motor_speed = 1935; motor_speed>1613;motor_speed-=300)
   {
-    pwm.setPWM(0,0,motor_speed); //1당 0.620us
-    delay(100);
+     pwm.setPWM(0,0,motor_speed); //1당 0.620us
+    delay(30);
     Serial.print(motor_speed);
     Serial.print(" = ");
     Serial.println(map(motor_speed, 1613, 3225, 0, 100));
+    pwm.setPWM(0,0,0);
+    delay(100);
   }
 
 

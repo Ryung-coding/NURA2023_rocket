@@ -1,11 +1,22 @@
 #include<Wire.h>
+#include <Adafruit_PWMServoDriver.h> 
 
 //SCL = A5 SDA = A4
 
 const int MPU=0x68;//MPU6050 I2C주소
 
 int AcX,AcY,AcZ,Tmp,GyX,GyY,GyZ;
+int past, filter;
 
+
+Adafruit_PWMServoDriver pwm=Adafruit_PWMServoDriver();
+
+// A "lowpassfilter()" function that Low Pass Filtering
+float lowpassfilter(float filter, float data, float lowpass_constant)
+{
+  filter = data * (1 - lowpass_constant) + filter * lowpass_constant;
+  return filter;   
+}
 
 void get6050()
 {
@@ -26,6 +37,8 @@ void get6050()
 
 void setup()
 {
+  pwm.begin();
+  
   Wire.begin();
   Wire.beginTransmission(MPU);
   Wire.write(0x6B);
@@ -33,16 +46,26 @@ void setup()
   Wire.endTransmission(true);
   Serial.begin(9600);
   pinMode(9, OUTPUT);
+  pwm.setPWMFreq(100);
 }
 
 void loop()
 {
   get6050();
-  
-  filter = 0.1*GyZ + 0.9*past;  //LPF
+
+  filter = lowpassfilter(past, GyZ, 0.1); //LPF
   Serial.print(GyZ);
   Serial.print(",");
   Serial.println(filter);
   past = filter;
   delay(15);
+  pwm.setPWM(0,0,10);
+  delay(1000);
+    pwm.setPWM(0,0,1200);
+  delay(1000);
+//  for(int i=0;i>100;i++){
+//    pwm.setPWM(0,0,i);
+//    delay(100);
+//  }
+  
 }
