@@ -13,15 +13,15 @@ float lowpassfilter(float filter, float data, float lowpass_constant)
 }
 
 void BLDC()
-{
+{ 
   do
   {
     motor_speed = constrain(map(duty, 0, 100, 1613, 3226), 1613, 3226); //1000~2000ms 로 제한을 걸고 duty를 mapping 하여 변환함
     motor_speed_filter = lowpassfilter(motor_speed_past, motor_speed, 0.9);
     Serial.println(motor_speed_filter);
-    pwm.setPWM(0,0,motor_speed_filter);
+    pwm.setPWM(1,0,motor_speed_filter);
     motor_speed_past = motor_speed_filter;
-    delay(20);
+    delay(1);
     }while(abs(motor_speed - motor_speed_filter) > 3);
     //delay(1000);
     //pwm.setPWM(0,0,1613);
