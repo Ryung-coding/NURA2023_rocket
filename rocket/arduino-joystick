@@ -1,0 +1,37 @@
+float x = 0;
+float y = 0;
+float z = 0;
+bool increase = true;
+
+void setup() {
+  Serial.begin(115200);
+  pinMode(8, INPUT_PULLUP);
+}
+
+void loop() {
+  float sensorx = analogRead(A0);//x는 A0
+  float sensory = analogRead(A1);//y는 A0
+  float vx = map(sensorx, 0, 1023, 0, 3); //조이스틱의 임의의 x,y값의 범위 조정
+  float vy = map(sensory, 0, 1023, 1, -1);
+  x = x + vx;
+  y = y + vy;
+  if (increase) { //z는 0에서 400으로 1씩 증가하다가 400이 되면 반대로 1씩 감소
+    if (z < 400) {
+      z++;
+    } else {
+      increase = false;
+    }
+  } else {
+    if (z > 0) {
+      z--;
+    } else {
+      increase = true;
+    }
+  }
+  Serial.print(x);
+  Serial.print(",");
+  Serial.print(y);
+  Serial.print(",");
+  Serial.println(z);
+  delay(40); //115200보드레이트에서 delay를 30이하로 하면 파이썬에서 값을 못받기 시작함
+}
