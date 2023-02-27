@@ -6,3 +6,4 @@
 2. server.js의 3번줄에 아두이노 포트 입력
 3. node 설치 
 4. 커멘드창에서 node server.js 명령어 실행
+5. 웹 localhost:3000 접속
