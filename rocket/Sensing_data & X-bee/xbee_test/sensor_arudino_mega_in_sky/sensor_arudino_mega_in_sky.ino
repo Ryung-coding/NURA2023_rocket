@@ -12,7 +12,7 @@ File myFile;
 void setup() {
   Serial.begin(9600);
   Wire.begin();
-  initializeMicroSD();
+ initializeMicroSD();
 }
 
 void loop() {
@@ -27,7 +27,7 @@ void loop() {
   duration = pulseIn(echoPin, HIGH);
   distance = duration * 0.034 / 2;
   
-  // MPU6050에서 가속도계 및 자이로스코프 값 읽어오기
+//   MPU6050에서 가속도계 및 자이로스코프 값 읽어오기
   Wire.beginTransmission(0x68);
   Wire.write(0x3B);  // 시작 주소 0x3B (ACCEL_XOUT_H)
   Wire.endTransmission(false);
@@ -41,7 +41,7 @@ void loop() {
   gy = Wire.read() << 8 | Wire.read();  // Y축 자이로스코프 값 읽어오기
   gz = Wire.read() << 8 | Wire.read();  // Z축 자이로스코프 값 읽어오기
 
-  // 센서 값 배열 만들기
+//   센서 값 배열 만들기
   int sensorData[7];
   sensorData[0] = distance;
   sensorData[1] = ax;
@@ -51,12 +51,12 @@ void loop() {
   sensorData[5] = gy;
   sensorData[6] = gz;
 
-  // 시리얼 통신으로 센서 값 배열 보내기
+//   시리얼 통신으로 센서 값 배열 보내기
 
   for (int i = 0; i < 7; i++){
     Serial.print(sensorData[i]);
     Serial.print(",");
-    writeValue(String(sensorData[i]));
+   writeValue(String(sensorData[i]));
     writeValue(",");
   }
   Serial.println();
@@ -73,7 +73,6 @@ void initializeMicroSD(){
   }
   Serial.println("initialization done.");
 }
-
 void writeValue(String val){
   // 파일을 열어 쓸 준비를 합니다. 한 번에 하나의 파일만 열 수 있습니다.
   myFile = SD.open("value.txt", FILE_WRITE); // 두 번째 인자가 있으면 쓰기모드입니다.
@@ -90,7 +89,6 @@ void writeValue(String val){
 void openValueFile(){
   // 파일을 읽기 위해 다시 엽니다. 두 번째 인자가 없으면 읽기모드입니다.
   myFile = SD.open("value.txt");
-  
   if (myFile) {
     Serial.println("value.txt:");
 
@@ -103,4 +101,4 @@ void openValueFile(){
     // 파일이 열리지 않으면 에러를 출력합니다.
     Serial.println("error opening value.txt");
   }
-}
+  }
