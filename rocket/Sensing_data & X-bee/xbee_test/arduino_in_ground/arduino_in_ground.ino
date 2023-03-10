@@ -16,9 +16,9 @@ void loop() {
   while(mySerial.available())  //mySerial 값이 있으면
   {
    
-    char myChar = (char)mySerial.read();  //mySerial int형식의 값을 char형식으로 변환
+    char myChar = mySerial.read();  //mySerial int형식의 값을 char형식으로 변환
     myString+=myChar;   //수신되는 문자열을 myString에 모두 붙임 (1바이트씩 전송되는 것을 모두 붙임)
-    delay(5);           //수신 문자열 끊김 방지
+    delay(10);           //수신 문자열 끊김 방지
   }
    if(!myString.equals(""))  //myString 값이 있다면
   {

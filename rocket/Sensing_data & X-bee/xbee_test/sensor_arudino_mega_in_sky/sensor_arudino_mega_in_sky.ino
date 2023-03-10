@@ -72,14 +72,14 @@ void loop() {
   
 
 //   시리얼 통신으로 센서 값 배열 보내기
-
+   Serial.print("[");
   for (int i = 0; i < 11; i++){
     Serial.print(sensorData[i]);
     Serial.print(",");
    writeValue(String(sensorData[i]));
     writeValue(",");
   }
-  Serial.println();
+  Serial.println("]");
   writeValue("\n");
 
   smartdelay(100);
