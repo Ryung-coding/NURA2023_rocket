@@ -17,7 +17,7 @@ File myFile;
 void setup() {
   Serial.begin(4800);
   Wire.begin();
-  GPS.begin(4800);
+  GPS.begin(9600);
   initializeMicroSD();
 }
 
@@ -50,10 +50,10 @@ void loop() {
 
 //  GPS 센서로 위도, 경도, 속도, 각도 읽어오기
   float flat, flon, speedMPS, courseDegree;
-  unsigned long age, date, time;
+  unsigned long age;
   
   gps.f_get_position(&flat, &flon, &age);
-  speedMPS = gps.f_speed_kmph() / 3.6;
+  speedMPS = gps.f_speed_mps();
   courseDegree = gps.f_course();
 
 //   센서 값 배열 만들기
@@ -81,6 +81,18 @@ void loop() {
   }
   Serial.println();
   writeValue("\n");
+
+  smartdelay(100);
+}
+
+static void smartdelay(unsigned long ms)
+{
+  unsigned long start = millis();
+  do 
+  {
+    while (GPS.available())
+      gps.encode(GPS.read());
+  } while (millis() - start < ms);
 }
 
 void initializeMicroSD(){
