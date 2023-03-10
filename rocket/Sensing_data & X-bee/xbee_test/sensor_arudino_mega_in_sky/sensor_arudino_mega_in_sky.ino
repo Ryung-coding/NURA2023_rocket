@@ -53,6 +53,8 @@ void loop() {
   unsigned long age, date, time;
   
   gps.f_get_position(&flat, &flon, &age);
+  speedMPS = gps.f_speed_kmph() / 3.6;
+  courseDegree = gps.f_course();
 
 //   센서 값 배열 만들기
   int sensorData[7];
