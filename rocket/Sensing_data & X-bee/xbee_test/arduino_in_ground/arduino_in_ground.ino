@@ -7,8 +7,8 @@ SoftwareSerial mySerial(blueTx, blueRx);  //시리얼 통신을 위한 객체선
 String myString=""; //받는 문자열
  
 void setup() {
-  Serial.begin(9600);   //시리얼모니터 
-  mySerial.begin(9600); //시리얼 개방
+  Serial.begin(4800);   //시리얼모니터 
+  mySerial.begin(4800); //시리얼 개방
   pinMode(13,OUTPUT);   //Pin 13을 OUTPUT으로 설정 (LED ON/OFF)
 }
  

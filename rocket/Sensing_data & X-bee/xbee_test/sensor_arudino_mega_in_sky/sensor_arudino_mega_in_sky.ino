@@ -15,9 +15,9 @@ SoftwareSerial GPS(7, 6);
 File myFile;
 
 void setup() {
-  Serial.begin(9600);
+  Serial.begin(4800);
   Wire.begin();
-  GPS.begin(9600);
+  GPS.begin(4800);
   initializeMicroSD();
 }
 
@@ -57,7 +57,7 @@ void loop() {
   courseDegree = gps.f_course();
 
 //   센서 값 배열 만들기
-  int sensorData[7];
+  int sensorData[11];
   sensorData[0] = distance;
   sensorData[1] = ax;
   sensorData[2] = ay;
@@ -73,7 +73,7 @@ void loop() {
 
 //   시리얼 통신으로 센서 값 배열 보내기
 
-  for (int i = 0; i < 7; i++){
+  for (int i = 0; i < 11; i++){
     Serial.print(sensorData[i]);
     Serial.print(",");
    writeValue(String(sensorData[i]));
