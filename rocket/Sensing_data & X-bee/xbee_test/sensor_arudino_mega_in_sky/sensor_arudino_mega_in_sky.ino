@@ -1,21 +1,28 @@
 #include <SPI.h>
 #include <SD.h>
 #include <Wire.h>
+#include <SoftwareSerial.h>
+#include <TinyGPS.h>
 
 const int trigPin = 2;      // 초음파 센서의 Trig 핀
 const int echoPin = 3;      // 초음파 센서의 Echo 핀
 
 int16_t ax, ay, az, gx, gy, gz;  // 가속도계 및 자이로스코프 값 저장 변수
 
+TinyGPS gps;
+SoftwareSerial GPS(7, 6);
+
 File myFile;
 
 void setup() {
   Serial.begin(9600);
   Wire.begin();
- initializeMicroSD();
+  GPS.begin(9600);
+  initializeMicroSD();
 }
 
 void loop() {
+//  초음파 센서로 거리 값 읽어오기
   long duration, distance;
   pinMode(trigPin, OUTPUT);
   digitalWrite(trigPin, LOW);
@@ -41,6 +48,12 @@ void loop() {
   gy = Wire.read() << 8 | Wire.read();  // Y축 자이로스코프 값 읽어오기
   gz = Wire.read() << 8 | Wire.read();  // Z축 자이로스코프 값 읽어오기
 
+//  GPS 센서로 위도, 경도, 속도, 각도 읽어오기
+  float flat, flon, speedMPS, courseDegree;
+  unsigned long age, date, time;
+  
+  gps.f_get_position(&flat, &flon, &age);
+
 //   센서 값 배열 만들기
   int sensorData[7];
   sensorData[0] = distance;
@@ -50,6 +63,11 @@ void loop() {
   sensorData[4] = gx;
   sensorData[5] = gy;
   sensorData[6] = gz;
+  sensorData[7] = flat;
+  sensorData[8] = flon;
+  sensorData[9] = speedMPS;
+  sensorData[10] = courseDegree;
+  
 
 //   시리얼 통신으로 센서 값 배열 보내기
 
