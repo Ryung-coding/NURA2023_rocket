@@ -15,17 +15,13 @@ void setup() {
 void loop() {
   while(mySerial.available())  //mySerial 값이 있으면
   {
+    char c = mySerial.read(); // 데이터를 1바이트 읽어옴
+    if (c == ']') { // 수신이 완료되었을 때
+      myString+="]";
+      Serial.println(myString); // 수신된 문자열을 시리얼 모니터에 출력
+      myString = ""; // myString 변수 초기화
+    } else { // 수신 중일 때
+      myString += c; // myString 변수에 문자를 추가
+    }
    
-    char myChar = mySerial.read();  //mySerial int형식의 값을 char형식으로 변환
-    myString+=myChar;   //수신되는 문자열을 myString에 모두 붙임 (1바이트씩 전송되는 것을 모두 붙임)
-    delay(10);           //수신 문자열 끊김 방지
-  }
-   if(!myString.equals(""))  //myString 값이 있다면
-  {
-    
-    Serial.print(myString); //시리얼모니터에 myString값 출력
-   
-
-  }
-  myString="";
-}
+}}
