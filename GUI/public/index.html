@@ -48,11 +48,44 @@
  <body>
 	
     <div id="map" style="
-    width : 75vw; height : 100vh;
+    width : 30vw; height : 100vh;
     float: left;
     "></div>
-   
-   <div id="messages" style="width :20.5vw; height : 100px; background-color: rgb(247, 234, 255);">
+    <div style="
+    width : 30vw; height : 100vh;
+    float: left; border: 1px solid red;
+    ">
+      <div style="
+      width : 100%; height : 49%;
+      float: left; border: 1px solid red;
+      ">
+      skew-t log-p Graph</div>
+      <div style="
+      width : 100%; height : 49%;
+      float: left; border: 1px solid red;
+      ">
+      2d View</div>
+      </div>
+   <div style="
+   width : 37vw; height : 100vh;
+   float: left; border: 1px solid red;
+   ">
+    <div style="
+    width : 100%; height : 49%;
+    float: left; border: 1px solid red;
+    ">
+      <div style="
+      width : 50%; height : 100%;
+      float: left; border: 1px solid red;
+      ">
+      position log</div>
+      <div style="
+      width : 49%; height : 100%;
+      float: left; border: 1px solid red;
+      ">
+      air flow log</div>
+    </div>
+   <!--<div id="messages" style="width :20.5vw; height : 100px; background-color: rgb(247, 234, 255);">
     
 
     <div
@@ -61,7 +94,7 @@
       어쩌구<br>저쩌구
     </div>
     
-  </div>
+  </div>-->
 
   
   
@@ -103,6 +136,9 @@
 	  <p>습도</p>
     <p>
       <span id="h" class="data"></span>%</p>
+      <p>기압</p>
+    <p>
+    <span id="at" class="data"></span>hPa</p>
   </div>
 
   <div id="messages" style="background-color: rgb(240, 255, 221);">
@@ -110,10 +146,26 @@
     <div
       style="border-radius: 10px 10px 0px 0px; float: left; background-color: rgb(194, 255, 119); width:100%; height: 20px;">
       <div style="float: left; line-height: 30px; margin-left: 5px; font-weight: bold;"></div>
+      <script type="text/javascript">
+      
+        function showImage(){
+         //var imgNum=Math.round(Math.random()*3);
+         var objImg=document.getElementById("introimg");
+         objImg.src='/image2';
+         setTimeout(showImage,100);
+        }
+      
+       </script>
       
     </div>
- 
+    <div>
+      <img id="introimg" style="width : 150px; margin-top: 30px; margin-left: 20px;">
+      <script type="text/javascript">
+        showImage();
+      </script>
+    </div>
   </div>
+  
   <div id="messages" style="background-color: rgb(226, 255, 253);">
 
     <div
@@ -121,21 +173,40 @@
       <div style="float: left; line-height: 30px; margin-left: 5px; font-weight: bold;"></div>
       
     </div>
+    <script type="text/javascript">
     
+      function showImage1(){
+       //var imgNum=Math.round(Math.random()*3);
+       var objImg=document.getElementById("image2");
+       objImg.src='/image2';
+       setTimeout(showImage,100);
+      }
+    
+     </script>
+    
+    <img src="/image2" id="image2" style="width : 150px; margin-top: 30px; margin-left: 20px;">
+    <script type="text/javascript">
+      showImage1();
+    </script>
 </div>
+<form id="form" action="" >
+  <input style="margin-left: 10px; margin-top : 10px; width : 17vw;
+  background-color: rgb(240, 240, 240);
+  border-radius: 10px;" id="input" autocomplete="off" /><button
+  style="margin-left: 3px; margin-top : 10px; width : 3vw;
+  background-color: rgb(240, 240, 240);
+  border-radius: 10px;" >전송</button>
+</form>
 </div>
+
+  
+    
+  </div>
 </div>
   
-    <form id="form" action="" >
-      <input style="margin-left: 10px; margin-top : 10px; width : 17vw;
-      background-color: rgb(240, 240, 240);
-      border-radius: 10px;" id="input" autocomplete="off" /><button
-      style="margin-left: 3px; margin-top : 10px; width : 3vw;
-      background-color: rgb(240, 240, 240);
-      border-radius: 10px;" >전송</button>
-    </form>
 
     <script>
+      
       var socket = io();
       var obj;
       
@@ -149,6 +220,7 @@
       var ey = document.getElementById('ey');
       var t = document.getElementById('t');
       var h = document.getElementById('h');
+      var at = document.getElementById('at');
       var form = document.getElementById('form');
       var input = document.getElementById('input');
   
@@ -176,6 +248,7 @@
               ey.innerText = obj.ey;
               t.innerText = obj.t;
               h.innerText = obj.h;
+              at.innerText = obj.at;
         
        });
       mapboxgl.accessToken = 'pk.eyJ1IjoidGFleW91IiwiYSI6ImNsZHY2ajVkejA4MGszdm5vaWpvdG41Nm0ifQ.05ZauoKkriS9v4sp6ozTAA';
@@ -249,16 +322,17 @@ var geometry1;
 //const geometry1 = new THREE.BufferGeometry().setFromPoints( points );
 //const line = new THREE.Line( geometry1, material1 );
 //낙하지점
-      const geometry = new THREE.BoxGeometry( 10, 5, 10 );
+      const geometry = new THREE.BoxGeometry( 10, 3, 10 );
 			const material = new THREE.MeshBasicMaterial( { color: 0xff0000 } );
 			const cube = new THREE.Mesh( geometry, material );
-			
+
+
 // use the three.js GLTF loader to add the 3D model to the three.js scene
 const loader = new THREE.GLTFLoader();
 loader.load(
-
-'https://docs.mapbox.com/mapbox-gl-js/assets/34M_17/34M_17.gltf',
-//'./model/scene.gltf',
+'./rocketHIGH.gltf',
+//'https://docs.mapbox.com/mapbox-gl-js/assets/34M_17/34M_17.gltf',
+//'http://cloud.taegi.duckdns.org/s/3YEjp37mXLfenc2/download/rocketHIGH.gltf',
 (gltf) => {
 //this.scene.add(gltf.scene);
 this.scene.add(gltf.scene);
@@ -285,8 +359,12 @@ this.scene.add( cube );
         renderer.render(scene,camera);  
     }
     animate();
-}
+}//,
+//undefined, function(error) {
+//  console.error(error);
+//}
 );
+
 //geometry1 = new THREE.BufferGeometry().setFromPoints( points );
 //line = new THREE.Line( geometry1, material1 );
 //this.scene.add( line );

@@ -21,13 +21,30 @@ void loop() {
   doc["x"] = i;
   doc["y"] = i;
   doc["z"] = i;
-  doc["ex"] = 50.3;
-  doc["ey"] = 30;
-  doc["pitch"] = float(i)/100;
-  doc["roll"] = float(i)/100;
-  doc["yaw"] = float(i)/100;
+  doc["ex"] = 400;
+  doc["ey"] = 400;
+  doc["pitch"] =-float(i)/150;
+  doc["roll"] = 0;//-float(i)/100;
+  doc["yaw"] = -float(i)/150;
   doc["t"] = 17;
   doc["h"] = 40.5;
+  doc["at"] = 1013;
+  serializeJson(doc, Serial);
+  Serial.println();
+  }
+  for(int i = 0; i <200; i++)
+  {
+  doc["x"] = 200 + i;
+  doc["y"] = 200 + i;
+  doc["z"] = 200 - i;
+  doc["ex"] = 400;
+  doc["ey"] = 400;
+  doc["pitch"] = -float(i+200)/150;
+  doc["roll"] = 0;//float(i)/100;
+  doc["yaw"] = -float(i+200)/150;
+  doc["t"] = 17;
+  doc["h"] = 40.5;
+  doc["at"] = 1013;
   serializeJson(doc, Serial);
   Serial.println();
   }
