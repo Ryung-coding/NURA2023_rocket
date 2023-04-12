@@ -14,7 +14,16 @@
   <script src="https://cdn.socket.io/4.5.0/socket.io.min.js"></script>
 	<script src="https://unpkg.com/three@0.126.0/build/three.min.js"></script>
 <script src="https://unpkg.com/three@0.126.0/examples/js/loaders/GLTFLoader.js"></script>
-
+<script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
+<script src='https://d3js.org/d3.v3.min.js'></script>
+		<script type="importmap">
+			{
+				"imports": {
+					"three": "./build/three.module.js",
+					"three/addons/": "./jsm/"
+				}
+			}
+		</script>
   <style>
 	
 		#messages {
@@ -42,7 +51,28 @@
 			color: #000000;
 		}
 	
-	</style>
+	
+    svg {
+      font: 8px sans-serif;
+    }
+    .line {
+      fill: none;
+      stroke: #000;
+      stroke-width: 1.5px;
+    }
+    .axis path,
+    .axis line {
+      fill: none;
+      stroke: #000;
+      shape-rendering: crispEdges;
+    }
+    path.line {
+  fill: none;
+  stroke: steelblue;
+  stroke-width: 2px;
+}
+
+</style>
 
  </head>
  <body>
@@ -60,11 +90,13 @@
       float: left; border: 1px solid red;
       ">
       skew-t log-p Graph</div>
-      <div style="
+      <div id="chart" style="
       width : 100%; height : 49%;
       float: left; border: 1px solid red;
       ">
-      2d View</div>
+    
+      <script  src="js/xyz_trace.js"></script>
+    </div>
       </div>
    <div style="
    width : 37vw; height : 100vh;
@@ -74,16 +106,9 @@
     width : 100%; height : 49%;
     float: left; border: 1px solid red;
     ">
-      <div style="
-      width : 50%; height : 100%;
-      float: left; border: 1px solid red;
-      ">
-      position log</div>
-      <div style="
-      width : 49%; height : 100%;
-      float: left; border: 1px solid red;
-      ">
-      air flow log</div>
+      
+      
+      air flow log
     </div>
    <!--<div id="messages" style="width :20.5vw; height : 100px; background-color: rgb(247, 234, 255);">
     
@@ -151,7 +176,7 @@
         function showImage(){
          //var imgNum=Math.round(Math.random()*3);
          var objImg=document.getElementById("introimg");
-         objImg.src='/image2';
+         objImg.src='/image1.jpg';
          setTimeout(showImage,100);
         }
       
@@ -178,18 +203,18 @@
       function showImage1(){
        //var imgNum=Math.round(Math.random()*3);
        var objImg=document.getElementById("image2");
-       objImg.src='/image2';
+       objImg.src='/image2.jpg';
        setTimeout(showImage,100);
       }
     
      </script>
     
-    <img src="/image2" id="image2" style="width : 150px; margin-top: 30px; margin-left: 20px;">
+    <img id="image2" style="width : 150px; margin-top: 30px; margin-left: 20px;">
     <script type="text/javascript">
       showImage1();
     </script>
 </div>
-<form id="form" action="" >
+<form id="form" action="">
   <input style="margin-left: 10px; margin-top : 10px; width : 17vw;
   background-color: rgb(240, 240, 240);
   border-radius: 10px;" id="input" autocomplete="off" /><button
@@ -199,277 +224,10 @@
 </form>
 </div>
 
-  
     
   </div>
 </div>
-  
-
-    <script>
-      
-      var socket = io();
-      var obj;
-      
-      var x = document.getElementById('x');
-      var y = document.getElementById('y');
-      var z = document.getElementById('z');
-      var pitch = document.getElementById('pitch');
-      var yaw = document.getElementById('yaw');
-      var roll = document.getElementById('roll');
-      var ex = document.getElementById('ex');
-      var ey = document.getElementById('ey');
-      var t = document.getElementById('t');
-      var h = document.getElementById('h');
-      var at = document.getElementById('at');
-      var form = document.getElementById('form');
-      var input = document.getElementById('input');
-  
-  
-      form.addEventListener('submit', function(e) {
-        e.preventDefault();
-        if (input.value) {
-          socket.emit('message', input.value);
-          input.value = '';
-          console.log("sending OK");
-        }
-       });
-  
-       socket.on('data', (msg) => {
-        //console.log(msg);
-        obj = JSON.parse(msg);
-        console.log(obj);
-              x.innerText = obj.x;
-              y.innerText = obj.y;
-              z.innerText = obj.z;
-              pitch.innerText = obj.pitch;
-              yaw.innerText = obj.yaw;
-              roll.innerText = obj.roll;
-              ex.innerText = obj.ex;
-              ey.innerText = obj.ey;
-              t.innerText = obj.t;
-              h.innerText = obj.h;
-              at.innerText = obj.at;
-        
-       });
-      mapboxgl.accessToken = 'pk.eyJ1IjoidGFleW91IiwiYSI6ImNsZHY2ajVkejA4MGszdm5vaWpvdG41Nm0ifQ.05ZauoKkriS9v4sp6ozTAA';
-const map = new mapboxgl.Map({
-container: 'map',
-// Choose from Mapbox's core styles, or make your own style with Mapbox Studio
-style: 'mapbox://styles/mapbox/light-v11',
-zoom: 17,
-center: [127.20799627897934, 34.610],
-pitch: 60,
-antialias: true // create the gl context with MSAA antialiasing, so custom layers are antialiased
-});
- 
-// parameters to ensure the model is georeferenced correctly on the map
-modelOrigin = [127.20799627897930, 34.610];
-modelAltitude = 0;
-modelRotate = [Math.PI / 2, 0, 0];
- 
-const modelAsMercatorCoordinate = mapboxgl.MercatorCoordinate.fromLngLat(
-modelOrigin,
-modelAltitude
-);
- 
-// transformation parameters to position, rotate and scale the 3D model onto the map
-const modelTransform = {
-translateX: modelAsMercatorCoordinate.x,
-translateY: modelAsMercatorCoordinate.y,
-translateZ: modelAsMercatorCoordinate.z,
-rotateX: modelRotate[0],
-rotateY: modelRotate[1],
-rotateZ: modelRotate[2],
-/* Since the 3D model is in real world meters, a scale transform needs to be
-* applied since the CustomLayerInterface expects units in MercatorCoordinates.
-*/
-scale: modelAsMercatorCoordinate.meterInMercatorCoordinateUnits()
-};
- 
-const THREE = window.THREE;
- 
-// configuration of the custom layer for a 3D model per the CustomLayerInterface
-const customLayer = {
-id: '3d-model',
-type: 'custom',
-renderingMode: '3d',
-onAdd: function (map, gl) {
-this.camera = new THREE.Camera();
-this.scene = new THREE.Scene();
- 
-// create two three.js lights to illuminate the model
-const directionalLight = new THREE.DirectionalLight(0xffffff);
-directionalLight.position.set(0, -70, 100).normalize();
-this.scene.add(directionalLight);
- 
-const directionalLight2 = new THREE.DirectionalLight(0xffffff);
-directionalLight2.position.set(0, 70, 100).normalize();
-this.scene.add(directionalLight2);
- 
-//비행 경로 표시
-const material1 = new THREE.LineBasicMaterial( { color: 0x0000ff } );
-var points = [];
-var line;
-points.push( new THREE.Vector3( 0,0,0 ) );
-//points.push( new THREE.Vector3( Number(obj.x), Number(obj.y), Number(obj.z) ) );
-points.push( new THREE.Vector3( 100,100,100 ) );
-//points.push( new THREE.Vector3( Number(obj.x), Number(obj.y), Number(obj.z) ) );
-// points.push( new THREE.Vector3( 0,0,0 ) );
-var geometry1;
-// geometry1 = new THREE.BufferGeometry().setFromPoints( points );
-//         line = new THREE.Line( geometry1, material1 );
-
-//const geometry1 = new THREE.BufferGeometry().setFromPoints( points );
-//const line = new THREE.Line( geometry1, material1 );
-//낙하지점
-      const geometry = new THREE.BoxGeometry( 10, 3, 10 );
-			const material = new THREE.MeshBasicMaterial( { color: 0xff0000 } );
-			const cube = new THREE.Mesh( geometry, material );
-
-
-// use the three.js GLTF loader to add the 3D model to the three.js scene
-const loader = new THREE.GLTFLoader();
-loader.load(
-'./rocketHIGH.gltf',
-//'https://docs.mapbox.com/mapbox-gl-js/assets/34M_17/34M_17.gltf',
-//'http://cloud.taegi.duckdns.org/s/3YEjp37mXLfenc2/download/rocketHIGH.gltf',
-(gltf) => {
-//this.scene.add(gltf.scene);
-this.scene.add(gltf.scene);
-this.scene.add( cube );
-//this.scene.add( line );
-
-    function animate(){
-      //this.scene.add( cube );
-        requestAnimationFrame(animate) //1초에 60번 실행됨.
-
-        //회전
-        gltf.scene.position.z = Number(obj.x); 
-        gltf.scene.position.x = Number(obj.y);
-        gltf.scene.position.y = Number(obj.z); //높이
-        gltf.scene.rotation.z = Number(obj.pitch);
-        gltf.scene.rotation.y = Number(obj.yaw);
-        gltf.scene.rotation.x = Number(obj.roll);
-        cube.rotation.y += 0.08;
-        cube.position.z = Number(obj.ex);
-        cube.position.x = Number(obj.ey);
-        
-       
-       
-        renderer.render(scene,camera);  
-    }
-    animate();
-}//,
-//undefined, function(error) {
-//  console.error(error);
-//}
-);
-
-//geometry1 = new THREE.BufferGeometry().setFromPoints( points );
-//line = new THREE.Line( geometry1, material1 );
-//this.scene.add( line );
-this.map = map;
- 
-// use the Mapbox GL JS map canvas for three.js
-this.renderer = new THREE.WebGLRenderer({
-canvas: map.getCanvas(),
-context: gl,
-antialias: true
-});
- 
-this.renderer.autoClear = false;
-},
-render: function (gl, matrix) {
-const rotationX = new THREE.Matrix4().makeRotationAxis(
-new THREE.Vector3(1, 0, 0),
-modelTransform.rotateX
-);
-const rotationY = new THREE.Matrix4().makeRotationAxis(
-new THREE.Vector3(0, 1, 0),
-modelTransform.rotateY
-);
-const rotationZ = new THREE.Matrix4().makeRotationAxis(
-new THREE.Vector3(0, 0, 1),
-modelTransform.rotateZ
-);
- 
-const m = new THREE.Matrix4().fromArray(matrix);
-const l = new THREE.Matrix4()
-.makeTranslation(
-modelTransform.translateX,
-modelTransform.translateY,
-modelTransform.translateZ
-)
-.scale(
-new THREE.Vector3(
-modelTransform.scale,
--modelTransform.scale,
-modelTransform.scale
-)
-)
-.multiply(rotationX)
-.multiply(rotationY)
-.multiply(rotationZ);
- 
-this.camera.projectionMatrix = m.multiply(l);
-this.renderer.resetState();
-this.renderer.render(this.scene, this.camera);
-this.map.triggerRepaint();
-}
-};
- 
-map.on('style.load', () => {
-map.addLayer(customLayer, 'waterway-label');
-// Insert the layer beneath any symbol layer.
-const layers = map.getStyle().layers;
-const labelLayerId = layers.find(
-(layer) => layer.type === 'symbol' && layer.layout['text-field']
-).id;
- 
-// The 'building' layer in the Mapbox Streets
-// vector tileset contains building height data
-// from OpenStreetMap.
-map.addLayer(
-{
-'id': 'add-3d-buildings',
-'source': 'composite',
-'source-layer': 'building',
-'filter': ['==', 'extrude', 'true'],
-'type': 'fill-extrusion',
-'minzoom': 15,
-'paint': {
-'fill-extrusion-color': '#aaa',
- 
-// Use an 'interpolate' expression to
-// add a smooth transition effect to
-// the buildings as the user zooms in.
-'fill-extrusion-height': [
-'interpolate',
-['linear'],
-['zoom'],
-15,
-0,
-15.05,
-['get', 'height']
-],
-'fill-extrusion-base': [
-'interpolate',
-['linear'],
-['zoom'],
-15,
-0,
-15.05,
-['get', 'min_height']
-],
-'fill-extrusion-opacity': 0.6
-}
-},
-labelLayerId
-);
-});
-</script>
-
-        
+<script src="index.js"></script>        
 	
  </body>
 </html>

@@ -1,24 +1,62 @@
 <!DOCTYPE html>
 <html>
-<head>
- <title></title>
- <script type="text/javascript">
-  var imgArray=new Array();
-  imgArray[0]="1.jpg";
-  imgArray[1]="2.jpg";
-  imgArray[2]="3.jpg";
-  imgArray[3]="4.jpg";
-
-  function showImage(){
-   //var imgNum=Math.round(Math.random()*3);
-   var objImg=document.getElementById("introimg");
-   objImg.src=imgArray[0];
-   setTimeout(showImage,100);
-  }
-
- </script>
-</head>
-<body onload="showImage()">
- <img id="introimg" border="0">
-</body>
+  <head>
+    <meta charset="utf-8">
+    <title>3D Air Flow Log with d3.js</title>
+    <script src="https://unpkg.com/d3-3d/build/d3-3d.js"></script>
+<script src="https://unpkg.com/d3-3d@version/build/d3-3d.js"></script>
+<script src="https://unpkg.com/d3-3d@version/build/d3-3d.min.js"></script>    <style>
+      canvas { display: block; }
+    </style>
+  </head>
+  <body>
+    <script>
+      const data = [
+        {x: 0, y: 0, z: 0, vx: 1, vy: 0, vz: 0},
+        //...
+        {x: 3, y: 3, z: 0, vx: -1, vy: 0, vz: 0},
+        {x: 4, y: 3, z: 0, vx: 0, vy: -1, vz: 0},
+      ];
+      
+      const scene = d3.select("body")
+                     .append("canvas")
+                     .attr("width", window.innerWidth)
+                     .attr("height", window.innerHeight)
+                     .node()
+                     .getContext("2d");
+      
+      const renderer = d3._3d()
+                         .scale(500)
+                         .origin([400, 300])
+                         .rotateX(-30)
+                         .rotateY(30)
+                         .shape("LINE_STRIP")
+                         .alpha(0.5)
+                         .color(d => d3.interpolateRainbow((d.z + 3) / 6));
+      
+      const frames = d3.range(0, 360, 2.5)
+                      .map(angle => {
+                        renderer.rotateY(angle);
+                        return data.map(renderer);
+                      });
+      
+      function render() {
+        const i = d3.interpolateRainbow(frames.length);
+        return t => {
+          scene.clearRect(0, 0, window.innerWidth, window.innerHeight);
+          frames.forEach((frame, index) => {
+            scene.beginPath();
+            renderer.draw(frame, scene);
+            scene.strokeStyle = i(index);
+            scene.stroke();
+          });
+        };
+      }
+      
+      d3.select(render).transition()
+                       .duration(frames.length * 30)
+                       .ease(d3.easeLinear)
+                       .tween("draw", render);
+    </script>
+  </body>
 </html>
