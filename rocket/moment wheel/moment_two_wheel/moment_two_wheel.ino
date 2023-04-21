@@ -88,9 +88,11 @@ void control_motor()
   if( u > 0) // ccw case
   {
     pwm.setPWM(0,0,abs(u));
+    pwm.setPWM(1,0,0);
   }
   else      // cw case
   {
+    pwm.setPWM(0,0,0);
     pwm.setPWM(1,0,abs(u));    
   }
 }
