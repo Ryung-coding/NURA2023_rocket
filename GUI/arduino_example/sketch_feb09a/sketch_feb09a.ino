@@ -16,32 +16,16 @@ void setup() {
 
 void loop() {
   // put your main code here, to run repeatedly:
-  for(int i = 0; i < 200; i++)
+  for(int i = 0; i < 360; i++)
   {
   doc["x"] = i;
   doc["y"] = i;
-  doc["z"] = i;
-  doc["ex"] = 400;
-  doc["ey"] = 400;
+  doc["z"] = 200*sin(radians(i/2));
+  doc["ex"] = 360;
+  doc["ey"] = 360;
   doc["pitch"] =-float(i)/150;
   doc["roll"] = 0;//-float(i)/100;
   doc["yaw"] = -float(i)/150;
-  doc["t"] = 17;
-  doc["h"] = 40.5;
-  doc["at"] = 1013;
-  serializeJson(doc, Serial);
-  Serial.println();
-  }
-  for(int i = 0; i <200; i++)
-  {
-  doc["x"] = 200 + i;
-  doc["y"] = 200 + i;
-  doc["z"] = 200 - i;
-  doc["ex"] = 400;
-  doc["ey"] = 400;
-  doc["pitch"] = -float(i+200)/150;
-  doc["roll"] = 0;//float(i)/100;
-  doc["yaw"] = -float(i+200)/150;
   doc["t"] = 17;
   doc["h"] = 40.5;
   doc["at"] = 1013;
