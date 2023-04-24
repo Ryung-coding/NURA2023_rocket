@@ -1,3 +1,6 @@
+// 회로 연결(UNO 기준)
+// 없음
+
 #include <SoftwareSerial.h> // 시리얼 통신 라이브러리
 #define LEN_OF_SENSOR_ARRAY 10 // 센서 값 배열의 길이
 

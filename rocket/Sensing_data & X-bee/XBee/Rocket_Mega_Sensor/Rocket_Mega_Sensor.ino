@@ -1,3 +1,9 @@
+// 회로 연결(MEGA 기준)
+// Rocket_MEGA : 0(RX0) - 18(TX1) , 1(TX0) - 19(RX1) (Rocket_MEGA_SENSOR의 0 1을 Rocket_MEGA의 18 19와 연결)
+// IMU : SCL - SCL , SDA - SDA
+// GPS : TXD - RX1(19) , RXD - TX1(20) 
+// MicroSD : MISO 50, MOSI 51, SCK 52, SC 53
+
 #include <SPI.h>
 #include <SD.h>
 #include <Wire.h>
@@ -8,14 +14,13 @@
 int16_t ax, ay, az, gx, gy, gz;  // 가속도계 및 자이로스코프 값 저장 변수
 
 TinyGPS gps;  // GPS 객체
-SoftwareSerial GPS(7, 6);   // TX : 7  RX : 6 
 
 File myFile;  // MicroSDCard 객체
 
 void setup() {
   Serial.begin(2400);
   Wire.begin();
-  GPS.begin(9600);  // GPS 보드레이트는 9600으로 고정
+  Serial1.begin(9600);  // GPS 보드레이트는 9600으로 고정 , TX : 19  RX : 18
   initializeMicroSD();  // MicroSDCard 초기화
 }
 
@@ -75,8 +80,8 @@ static void smartdelay(unsigned long ms){   // GPS용 딜레이
   unsigned long start = millis();
   do 
   {
-    while (GPS.available())
-      gps.encode(GPS.read());
+    while (Serial1.available())
+      gps.encode(Serial1.read());
   } while (millis() - start < ms);
 }
 
