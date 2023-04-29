@@ -27,7 +27,8 @@ void loop() {
       else sensorData[c - 'a' - 1] = myString;
       myString = "";                                                                     
     }
-    else myString += c;                                               // 데이터가 알파벳이 아니면(실제 데이터값) myString에 한 글자씩 쌓음.                                                  
+    else
+      if (c != '\n') myString += c;                                               // 데이터가 알파벳이 아니면(실제 데이터값) myString에 한 글자씩 쌓음.                                                  
   }
 
   printValueOfArray(sensorData,LEN_OF_SENSOR_ARRAY);                  // 데이터를 Serial 출력한다.

@@ -1,9 +1,10 @@
 // 회로 연결(MEGA 기준) 
-// Rocket_MEGA : 0(RX0) - 18(TX1), 1(TX0) - 19(RX1) (Rocket_MEGA_SENSOR의 0 1을 Rocket_MEGA의 18 19와 연결)
+// Rocket_Mega : 0(RX0) - 18(TX1), 1(TX0) - 19(RX1) (Rocket_Mega_Sensor의 0 1을 Rocket_Mega의 18 19와 연결)
+// Rocket_Due  : 16(TX2) - 19(RX1), 17(RX2) - 18(TX1) (Rocket_Mega_Sensor의 16 17을 Rocket_Due의 19 18과 연결)
 // BMP280 : SCL - 21(SCL), SDA - 20(SDA)
 // DHT22  : SIG - 2
 // IMU    : SCL - SCL, SDA - SDA
-// GPS    : TXD - 19(RX1), RXD - 20(TX1) 
+// GPS    : TXD - 18(RX1), RXD - 19(TX1) 
 // MicroSD : MISO - 50, MOSI - 51, SCK - 52, SC - 53
 
 
@@ -31,6 +32,7 @@ unsigned long age;                          // GPS 정확도
 
 void setup() {
   Serial.begin(2400);
+  Serial2.begin(2400);
   Wire.begin();
   bmp.begin(0x76);
   dht.begin();
@@ -40,6 +42,9 @@ void setup() {
 
 
 void loop() {
+//  파일을 열어 쓸 준비를 합니다. 한 번에 하나의 파일만 열 수 있습니다.
+  myFile = SD.open("value.txt", FILE_WRITE);
+  
 //  BMP280에서 기압, 고도 값 읽어오기
   Pressure = bmp.readPressure()/1000;
   Altitude = bmp.readAltitude(1019.1);
@@ -82,9 +87,9 @@ void loop() {
   sensorData[7] = gx;
   sensorData[8] = gy;
   sensorData[9] = gz;
-  sensorData[10] = flat;
-  sensorData[11] = flon;
-  sensorData[12] = speedMPS;
+  sensorData[10] = speedMPS;
+  sensorData[11] = flat;
+  sensorData[12] = flon;
   sensorData[13] = courseDegree;
 
 
@@ -95,12 +100,17 @@ void loop() {
     writeValue(String(sensorData[i]));
     writeValue(",");
   }
+  for(int j = 4; j < 11; j++){
+    Serial2.print(char('a' + j));
+    Serial2.print(sensorData[j]);
+  }
   Serial.println();
+  Serial2.println();
   writeValue("\n");
   smartdelay(100);
+
+  myFile.close(); // 파일을 닫습니다.
 }// Loop End
-
-
 
 
 // GPS용 딜레이
@@ -129,33 +139,7 @@ void initializeMicroSD(){
 
 // string 변수를 매개변수로 받아 MicroSD의 txt 파일에 작성
 void writeValue(String val){  
-  // 파일을 열어 쓸 준비를 합니다. 한 번에 하나의 파일만 열 수 있습니다.
-  myFile = SD.open("value.txt", FILE_WRITE); // 두 번째 인자가 있으면 쓰기모드입니다.
-
-  if (myFile) { // 파일이 정상적으로 열리면 파일에 문자를 작성(추가)합니다.
-    myFile.print(val);
-    myFile.close(); // 파일을 닫습니다.
-  } else {
-    // 파일이 열리지 않으면 에러를 출력합니다.
-    Serial.println("error opening value.txt");
-  }
-}
-
-
-// MicroSD 안의 txt 파일 값을 읽어 Serial 출력
-void openValueFile(){   
-  // 파일을 읽기 위해 다시 엽니다. 두 번째 인자가 없으면 읽기모드입니다.
-  myFile = SD.open("value.txt");
-  if (myFile) {
-    Serial.println("value.txt:");
-
-    // while문을 통해 파일을 EOF(End-Of-File)까지 읽습니다.
-    while (myFile.available()) {
-      Serial.write(myFile.read()); // 읽을 파일이 있다면 시리얼로 출력합니다.
-    }
-    myFile.close(); // 파일을 닫습니다.
-  } else {
-    // 파일이 열리지 않으면 에러를 출력합니다.
-    Serial.println("error opening value.txt");
-  }
+  // 파일이 정상적으로 열리면 파일에 문자를 작성(추가)합니다.
+  if (myFile) myFile.print(val);
+  else Serial.println("error opening value.txt");  // 파일이 열리지 않으면 에러를 출력합니다.
 }
