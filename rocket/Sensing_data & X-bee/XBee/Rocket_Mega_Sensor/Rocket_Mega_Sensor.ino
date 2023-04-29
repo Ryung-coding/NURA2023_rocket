@@ -44,12 +44,11 @@ void setup() {
 void loop() {
 //  파일을 열어 쓸 준비를 합니다. 한 번에 하나의 파일만 열 수 있습니다.
   myFile = SD.open("value.txt", FILE_WRITE);
-  
+
 //  BMP280에서 기압, 고도 값 읽어오기
   Pressure = bmp.readPressure()/1000;
   Altitude = bmp.readAltitude(1019.1);
-
-
+  
 // DHT22에서 온도, 습도 값 읽어오기
   Temperature = dht.readTemperature();
   Humidity = dht.readHumidity();
@@ -68,7 +67,6 @@ void loop() {
   gx = Wire.read() << 8 | Wire.read();  // X축 자이로스코프 값 읽어오기
   gy = Wire.read() << 8 | Wire.read();  // Y축 자이로스코프 값 읽어오기
   gz = Wire.read() << 8 | Wire.read();  // Z축 자이로스코프 값 읽어오기
-
 
 //  GPS 센서에서 위도, 경도, 속도, 각도 값 읽어오기
   gps.f_get_position(&flat, &flon, &age);   // 위도, 경도, 정확도 얻음
@@ -131,7 +129,6 @@ void initializeMicroSD(){
   // Mega 기준 MISO 50, MOSI 51, SCK 52, SC 53
   if (!SD.begin(53)) { // SD카드 모듈을 초기화합니다, 매개변수에 SC 핀 번호 입력
     Serial.println("initialization failed!"); // SD카드 모듈 초기화에 실패하면 에러를 출력합니다.
-    while(1);
   }
   Serial.println("initialization done.");
 }
@@ -141,5 +138,4 @@ void initializeMicroSD(){
 void writeValue(String val){  
   // 파일이 정상적으로 열리면 파일에 문자를 작성(추가)합니다.
   if (myFile) myFile.print(val);
-  else Serial.println("error opening value.txt");  // 파일이 열리지 않으면 에러를 출력합니다.
 }
