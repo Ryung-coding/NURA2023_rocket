@@ -20,6 +20,141 @@ var at = document.getElementById('at');
 var form = document.getElementById('form');
 var input = document.getElementById('input');
 
+//그래프 시작
+var count = 2000,
+    data = [],
+    margin = {top: 10, right: 10, bottom: 10, left: 40},
+    width = 400, //- margin.left - margin.right,
+    height = 180; //- margin.top - margin.bottom;
+
+var xScale = d3.scale.linear()
+    .domain([count-2000, count])
+    .range([0, width]);
+
+var yScale = d3.scale.linear()
+    .domain([-400, 400])
+    .range([height, 0]);
+
+var lineGenerator = d3.svg.line()
+    .x(function(d, i) { return xScale(d.x); })
+    .y(function(d, i) { return yScale(d.y); });
+
+    var svg = d3.select("#chart").append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+  .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+svg.append("defs").append("clipPath")
+    .attr("id", "clip")
+  .append("rect")
+    .attr("width", width)
+    .attr("height", height);
+
+svg.append("g")
+    .attr("class", "x axis")
+    .attr("transform", "translate(0," + yScale(0) + ")")
+    .call(d3.svg.axis().scale(xScale).orient("bottom"));
+
+svg.append("g")
+    .attr("class", "y axis")
+    .call(d3.svg.axis().scale(yScale).orient("left"));
+
+var path = svg.append("g")
+    .attr("clip-path", "url(#clip)")
+  .append("path")
+    .attr("class", "line");
+//그래프1 끝
+//그래프2 시작
+var count1 = 2000,
+    data1 = [],
+    margin1 = {top: 10, right: 10, bottom: 10, left: 40},
+    width1 = 400, //- margin.left - margin.right,
+    height1 = 180; //- margin.top - margin.bottom;
+
+var xScale1 = d3.scale.linear()
+    .domain([count1-2000, count1])
+    .range([0, width1]);
+
+var yScale1 = d3.scale.linear()
+    .domain([-400, 400])
+    .range([height1, 0]);
+
+var lineGenerator1 = d3.svg.line()
+    .x(function(d, i) { return xScale1(d.x); })
+    .y(function(d, i) { return yScale1(d.y); });
+
+    var svg1 = d3.select("#chart1").append("svg")
+    .attr("width", width1 + margin1.left + margin1.right)
+    .attr("height", height1 + margin1.top + margin1.bottom)
+  .append("g")
+    .attr("transform", "translate(" + margin1.left + "," + margin1.top + ")");
+
+svg1.append("defs").append("clipPath")
+    .attr("id", "clip1")
+  .append("rect")
+    .attr("width", width1)
+    .attr("height", height1);
+
+svg1.append("g")
+    .attr("class", "x axis")
+    .attr("transform", "translate(0," + yScale(0) + ")")
+    .call(d3.svg.axis().scale(xScale1).orient("bottom"));
+
+svg1.append("g")
+    .attr("class", "y axis")
+    .call(d3.svg.axis().scale(yScale1).orient("left"));
+
+var path1 = svg1.append("g")
+    .attr("clip-path", "url(#clip1)")
+  .append("path")
+    .attr("class", "line");
+//그래프2 끝
+//그래프3 시작
+var count2 = 2000,
+    data2 = [],
+    margin2 = {top: 10, right: 10, bottom: 10, left: 40},
+    width2 = 400, //- margin.left - margin.right,
+    height2 = 180; //- margin.top - margin.bottom;
+
+var xScale2 = d3.scale.linear()
+    .domain([count2-2000, count2])
+    .range([0, width2]);
+
+var yScale2 = d3.scale.linear()
+    .domain([-400, 400])
+    .range([height2, 0]);
+
+var lineGenerator2 = d3.svg.line()
+    .x(function(d, i) { return xScale2(d.x); })
+    .y(function(d, i) { return yScale2(d.y); });
+
+    var svg2 = d3.select("#chart2").append("svg")
+    .attr("width", width2 + margin2.left + margin2.right)
+    .attr("height", height2 + margin2.top + margin2.bottom)
+  .append("g")
+    .attr("transform", "translate(" + margin2.left + "," + margin2.top + ")");
+
+svg2.append("defs").append("clipPath")
+    .attr("id", "clip2")
+  .append("rect")
+    .attr("width", width2)
+    .attr("height", height2);
+
+svg2.append("g")
+    .attr("class", "x axis")
+    .attr("transform", "translate(0," + yScale(0) + ")")
+    .call(d3.svg.axis().scale(xScale2).orient("bottom"));
+
+svg2.append("g")
+    .attr("class", "y axis")
+    .call(d3.svg.axis().scale(yScale2).orient("left"));
+
+var path2 = svg2.append("g")
+    .attr("clip-path", "url(#clip2)")
+  .append("path")
+    .attr("class", "line");
+//그래프3 끝
 
 form.addEventListener('submit', function(e) {
   e.preventDefault();
@@ -72,7 +207,7 @@ mapboxgl.accessToken = 'pk.eyJ1IjoidGFleW91IiwiYSI6ImNsZHY2ajVkejA4MGszdm5vaWpvd
 const map = new mapboxgl.Map({
 container: 'map',
 // Choose from Mapbox's core styles, or make your own style with Mapbox Studio
-style: 'mapbox://styles/mapbox/light-v11',
+style: 'mapbox://styles/mapbox/satellite-streets-v11',//light-v11
 zoom: 17,
 center: [127.20799627897934, 34.610],
 pitch: 60,
@@ -168,6 +303,78 @@ function animate(){
   cube.position.z = Number(obj.ex);
   cube.position.x = Number(obj.ey);
 
+  //그래프1 시작
+  var newData = { x: count-2000, y: obj.x };
+  data.push(newData);
+  
+  // redraw the line
+  path.datum(data)
+    .attr("d", lineGenerator);
+  
+  // shift x axis to the left
+  xScale.domain([count-4000, count-2000]);
+  svg.select(".x.axis")
+    .transition()
+    .duration(50)
+    .ease("linear")
+    .call(d3.svg.axis().scale(xScale).orient("bottom"));
+  
+  // pop the old data point off the front
+  if (data.length > 2000) {
+    data.shift();
+  }
+  // increment count
+  count++;
+  //그래프1 끝
+  //그래프2 시작
+  var newData1 = { x: count1-2000, y: obj.y };
+  data1.push(newData1);
+ 
+  
+  // redraw the line
+  path1.datum(data1)
+    .attr("d", lineGenerator1);
+  
+  // shift x axis to the left
+  xScale1.domain([count1-4000, count1-2000]);
+  svg1.select(".x.axis")
+    .transition()
+    .duration(50)
+    .ease("linear")
+    .call(d3.svg.axis().scale(xScale1).orient("bottom"));
+  
+  // pop the old data point off the front
+  if (data1.length > 2000) {
+    data1.shift();
+  }
+  // increment count
+  count1++;
+  //그래프2 끝
+  //그래프3 시작
+  var newData2 = { x: count2-2000, y: obj.z };
+  data2.push(newData2);
+ 
+  
+  // redraw the line
+  path2.datum(data2)
+    .attr("d", lineGenerator2);
+  
+  // shift x axis to the left
+  xScale2.domain([count2-4000, count2-2000]);
+  svg2.select(".x.axis")
+    .transition()
+    .duration(50)
+    .ease("linear")
+    .call(d3.svg.axis().scale(xScale2).orient("bottom"));
+  
+  // pop the old data point off the front
+  if (data2.length > 2000) {
+    data2.shift();
+  }
+  // increment count
+  count2++;
+  //그래프3 끝
+ 
   renderer.render(scene,camera);  
 }
 animate();

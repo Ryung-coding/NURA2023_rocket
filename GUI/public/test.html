@@ -1,62 +1,123 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="utf-8">
-    <title>3D Air Flow Log with d3.js</title>
-    <script src="https://unpkg.com/d3-3d/build/d3-3d.js"></script>
-<script src="https://unpkg.com/d3-3d@version/build/d3-3d.js"></script>
-<script src="https://unpkg.com/d3-3d@version/build/d3-3d.min.js"></script>    <style>
-      canvas { display: block; }
-    </style>
-  </head>
-  <body>
-    <script>
-      const data = [
-        {x: 0, y: 0, z: 0, vx: 1, vy: 0, vz: 0},
-        //...
-        {x: 3, y: 3, z: 0, vx: -1, vy: 0, vz: 0},
-        {x: 4, y: 3, z: 0, vx: 0, vy: -1, vz: 0},
-      ];
-      
-      const scene = d3.select("body")
-                     .append("canvas")
-                     .attr("width", window.innerWidth)
-                     .attr("height", window.innerHeight)
-                     .node()
-                     .getContext("2d");
-      
-      const renderer = d3._3d()
-                         .scale(500)
-                         .origin([400, 300])
-                         .rotateX(-30)
-                         .rotateY(30)
-                         .shape("LINE_STRIP")
-                         .alpha(0.5)
-                         .color(d => d3.interpolateRainbow((d.z + 3) / 6));
-      
-      const frames = d3.range(0, 360, 2.5)
-                      .map(angle => {
-                        renderer.rotateY(angle);
-                        return data.map(renderer);
-                      });
-      
-      function render() {
-        const i = d3.interpolateRainbow(frames.length);
-        return t => {
-          scene.clearRect(0, 0, window.innerWidth, window.innerHeight);
-          frames.forEach((frame, index) => {
-            scene.beginPath();
-            renderer.draw(frame, scene);
-            scene.strokeStyle = i(index);
-            scene.stroke();
-          });
-        };
-      }
-      
-      d3.select(render).transition()
-                       .duration(frames.length * 30)
-                       .ease(d3.easeLinear)
-                       .tween("draw", render);
-    </script>
-  </body>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>3D Air Flow Log</title>
+	<style>
+		body {
+			margin: 0;
+			overflow: hidden;
+		}
+		canvas {
+			display: block;
+		}
+	</style>
+</head>
+<body>
+	
+	<script src="https://unpkg.com/three@0.126.0/build/three.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/three/examples/js/controls/OrbitControls.js"></script>
+	<script>
+// var airFlowData = [];
+// var radius = 10;
+// for (var x = -10; x <= 10; x++) {
+//   for (var y = -10; y <= 10; y++) {
+//     for (var z = -10; z <= 10; z++) {
+//       var distance = Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2) + Math.pow(z, 2));
+//       if (distance <= radius) {
+//         var strength = 1 - distance / radius;
+//         airFlowData.push({x: x, y: y, z: z, u: x * strength, v: y * strength, w: z * strength});
+//       }
+//     }
+//   }
+// }
+var airFlowData = [];
+
+// 측정 지점의 수
+var numPoints = 1000;
+
+// 측정 지점 생성
+for (var i = 0; i < numPoints; i++) {
+  var x = Math.random() * 100 - 50;  // x 좌표
+  var y = Math.random() * 100 - 50;  // y 좌표
+  var z = Math.random() * 100 - 50;  // z 좌표
+  
+  // 공기 흐름 속도 계산
+  var u = Math.random() * 10 - 5;    // x 방향 속도
+  var v = Math.random() * 10 - 5;    // y 방향 속도
+  var w = Math.random() * 10 - 5;    // z 방향 속도
+  
+  // 측정 지점 정보 저장
+  airFlowData.push({x: x, y: y, z: z, u: u, v: v, w: w});
+}
+
+
+
+		var scene = new THREE.Scene();
+		var camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
+		var renderer = new THREE.WebGLRenderer();
+		renderer.setSize( window.innerWidth, window.innerHeight );
+		document.body.appendChild( renderer.domElement );
+
+		var controls = new THREE.OrbitControls( camera, renderer.domElement );
+		controls.enableDamping = true;
+		controls.dampingFactor = 0.25;
+		controls.screenSpacePanning = false;
+		controls.minDistance = 1; // 카메라 최대줌
+		controls.maxDistance = 100;//카메라 최소줌
+		controls.maxPolarAngle = Math.PI / 2;
+
+		var material = new THREE.LineBasicMaterial( { color: 0x00ffff } );
+		var geometry = new THREE.BufferGeometry();
+		var vertices = [];
+		var indices = [];
+
+		airFlowData.forEach(function(d, i) {
+			vertices.push(d.x, d.y, d.z);
+			vertices.push(d.x + d.u, d.y + d.v, d.z + d.w);
+			indices.push(i*2, i*2+1);
+		});
+
+		geometry.setAttribute( 'position', new THREE.Float32BufferAttribute( vertices, 3 ) );
+		geometry.setIndex( indices );
+		var lines = new THREE.LineSegments( geometry, material );
+		scene.add( lines );
+
+		camera.position.z = 100;//5 카메라 처음 로딩 시점
+
+//xyz 눈금자 그리기
+for (var i = -70; i <= 70; i++) {
+  var geometry = new THREE.BoxGeometry( 1, 0.3, 0.3 );  // 눈금의 크기는 (0.1, 1, 0.1)
+  var material = new THREE.MeshBasicMaterial( {color: 0x0000ff} ); // 파란색으로 지정
+  var cube = new THREE.Mesh( geometry, material );
+  cube.position.set(i, 0, 0); // 눈금 위치 지정
+  scene.add( cube );
+}
+
+// y축 눈금 생성
+for (var i = -70; i <= 70; i++) {
+  var geometry = new THREE.BoxGeometry( 0.3, 1, 0.3 );  // 눈금의 크기는 (1, 0.1, 0.1)
+  var material = new THREE.MeshBasicMaterial( {color: 0x00ff00} ); // 초록색으로 지정
+  var cube = new THREE.Mesh( geometry, material );
+  cube.position.set(0, i, 0); // 눈금 위치 지정
+  scene.add( cube );
+}
+
+// z축 눈금 생성
+for (var i = -70; i <= 70; i++) {
+  var geometry = new THREE.BoxGeometry( 0.3, 0.3, 1 );  // 눈금의 크기는 (0.1, 0.1, 1)
+  var material = new THREE.MeshBasicMaterial( {color: 0xff0000} ); // 빨간색으로 지정
+  var cube = new THREE.Mesh( geometry, material );
+  cube.position.set(0, 0, i); // 눈금 위치 지정
+  scene.add( cube );
+}
+
+		function animate() {
+			requestAnimationFrame( animate );
+			renderer.render( scene, camera );
+			controls.update();
+		}
+		animate();
+	</script>
+</body>
 </html>
