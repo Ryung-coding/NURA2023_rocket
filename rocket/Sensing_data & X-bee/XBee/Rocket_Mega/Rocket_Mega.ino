@@ -7,7 +7,7 @@ void setup() {
 }
 
 void loop() {
-  if (Serial1.available()){         // 만약 Rocket_Mega_Sensor로부터 값이 들어오면
+  if (Serial1.available()){         // 만약 Rocket_Mega_Sensor로부터 값이 들어오면 
      int inByte = Serial1.read();   // 값을 읽어서
      Serial.write(inByte);          // Serial 출력(XBee로도 출력됨)
   }
