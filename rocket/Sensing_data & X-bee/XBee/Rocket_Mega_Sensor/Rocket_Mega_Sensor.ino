@@ -41,7 +41,6 @@ unsigned long prevage;
 
 bool sendData;  // 데이터를 보낼지 말지 결정하는 변수
 
-
 void setup() {
   Serial.begin(2400);   
   Serial2.begin(2400);  // Due와의 시리얼 통신
@@ -51,7 +50,7 @@ void setup() {
   Serial1.begin(9600);  // GPS 보드레이트는 9600으로 고정
   initializeMicroSD();
   wdt_enable(WDTO_1S);  // Watchdog Timer 1초
-  sendData = false;
+  sendData = true;
 }// Setup End
 
 
@@ -90,6 +89,28 @@ void loop() {
   speedMPS = gps.f_speed_mps();             // 속도 얻음
   courseDegree = gps.f_course();            // 각도 얻음
 
+//  Serial.print(ax);
+//  Serial.print("  ");
+//  Serial.print(ay);
+//  Serial.print("  ");
+//  Serial.print(az);
+//  Serial.print("  ");
+//  Serial.print(gx);
+//  Serial.print("  ");
+//  Serial.print(gy);
+//  Serial.print("  ");
+//  Serial.print(gz);
+//  Serial.print("  ");
+//  Serial.print(Pressure);
+//  Serial.print("  ");
+//  Serial.print(Altitude);
+//  Serial.print("  ");
+//  Serial.print(Temperature);
+//  Serial.print("  ");
+//  Serial.print(Humidity);
+//  Serial.print("  ");
+//  Serial.println();
+
 
 // 센서 값들이 이상하지 않은지 체크하기
   checkSensorData();
@@ -126,6 +147,39 @@ void loop() {
   }
 }// Loop End
 
+
+
+void checkSensorData(){
+  // BMP280 데이터 체크
+  if (isnan(Altitude)){
+    Pressure = prevPressure;
+    Altitude = prevAltitude;
+  }
+  if (Altitude > 1462){
+    Pressure = prevPressure;
+    Altitude = prevAltitude;
+    bmp.begin(0x76);
+  }
+  if (Pressure == 0 && Altitude == 0){
+    Pressure = prevPressure;
+    Altitude = prevAltitude;
+    bmp.begin(0x76);
+  }
+
+  // DHT22 데이터 체크
+  if (isnan(Temperature)){
+    Temperature = prevTemperature;
+    Humidity = prevHumidity;
+  }
+  
+  // MPU9250 데이터 체크
+  
+  if (ax == -1 && ay == -1){
+    ax = prevax;  ay = prevay;  az = prevaz;  gx = prevgx;  gy = prevgy;  gz = prevgz;
+  }
+  if (ax == 0 && ay == 0) sendData = false;
+  else sendData = true;
+}
 
 
 void putSensorDataIntoArray(){
@@ -171,37 +225,4 @@ void initializeMicroSD(){
     Serial.println("initialization failed!"); // SD카드 모듈 초기화에 실패하면 에러를 출력합니다.
   }
   Serial.println("initialization done.");
-}
-
-
-void checkSensorData(){
-  // BMP280 데이터 체크
-  if (isnan(Altitude)){
-    Pressure = prevPressure;
-    Altitude = prevAltitude;
-  }
-  if (Altitude > 1816){
-    Pressure = prevPressure;
-    Altitude = prevAltitude;
-    bmp.begin(0x76);
-  }
-  if (Pressure == 0 && Altitude == 0){
-    Pressure = prevPressure;
-    Altitude = prevAltitude;
-    bmp.begin(0x76);
-  }
-
-  // DHT22 데이터 체크
-  if (isnan(Temperature)){
-    Temperature = prevTemperature;
-    Humidity = prevHumidity;
-  }
-  
-  // MPU9250 데이터 체크
-  if (sensorData[0] == 0 && sensorData[1] == 0) sendData = false;
-  else sendData = true;
-  
-  if (ax == -1 && ay == -1){
-    ax = prevax;  ay = prevay;  az = prevaz;  gx = prevgx;  gx = prevgx;  gx = prevgx;
-  }
 }
