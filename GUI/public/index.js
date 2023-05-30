@@ -2,13 +2,14 @@ var socket = io();
 var obj;
 
 var points = [];
+var airFlowData = [];
 var line = null;
+const THREE = window.THREE;
 
 
-
-var x = document.getElementById('x');
-var y = document.getElementById('y');
-var z = document.getElementById('z');
+var lx = document.getElementById('lx');
+var ly = document.getElementById('ly');
+var lz = document.getElementById('lz');
 var pitch = document.getElementById('pitch');
 var yaw = document.getElementById('yaw');
 var roll = document.getElementById('roll');
@@ -156,6 +157,58 @@ var path2 = svg2.append("g")
     .attr("class", "line");
 //그래프3 끝
 
+//air flow log 시작
+var scene1 = new THREE.Scene();
+var camera1 = new THREE.PerspectiveCamera( 75, 1.7/*window.innerWidth / window.innerHeight*/, 0.1, 1000 );
+var renderer1 = new THREE.WebGLRenderer();
+renderer1.setSize( 520,300);//window.innerWidth, window.innerHeight );
+document.getElementById('airflow').appendChild(renderer1.domElement); // 변경된 부분: 그래프를 airflow div에 추가
+
+var controls1 = new THREE.OrbitControls( camera1, renderer1.domElement );
+controls1.enableDamping = true;
+controls1.dampingFactor = 0.25;
+controls1.screenSpacePanning = false;
+controls1.minDistance = 1; // 카메라 최대줌
+controls1.maxDistance = 1000;//카메라 최소줌
+controls1.maxPolarAngle = Math.PI / 2;
+
+var material1 = new THREE.LineBasicMaterial( { color: 0x00ffff } );
+var geometry1 = new THREE.BufferGeometry();
+var vertices = [];
+var indices = [];
+
+
+
+camera1.position.z = 100;
+
+// xyz 눈금자 그리기
+for (var i = -500; i <= 500; i++) {
+var geometry1 = new THREE.BoxGeometry(2, 2, 2);
+var material1 = new THREE.MeshBasicMaterial({ color: 0x0000ff });
+var cube = new THREE.Mesh(geometry1, material1);
+cube.position.set(i, 0, 0);
+scene1.add(cube);
+}
+
+// y축 눈금 생성
+for (var i = -500; i <= 500; i++) {
+var geometry1 = new THREE.BoxGeometry(2, 2, 2);
+var material1 = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+var cube = new THREE.Mesh(geometry1, material1);
+cube.position.set(0, i, 0);
+scene1.add(cube);
+}
+
+// z축 눈금 생성
+for (var i = -500; i <= 500; i++) {
+var geometry1 = new THREE.BoxGeometry(2, 2, 2);
+var material1 = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+var cube = new THREE.Mesh(geometry1, material1);
+cube.position.set(0, 0, i);
+scene1.add(cube);
+}
+//air flow log 끝
+
 form.addEventListener('submit', function(e) {
   e.preventDefault();
   if (input.value) {
@@ -173,7 +226,7 @@ form.addEventListener('submit', function(e) {
 
 
   points.push(new THREE.Vector3(obj.x, obj.z, obj.y));
-
+  airFlowData.push({x: obj.x, y: obj.y, z: obj.z, u: obj.airx, v: obj.airy, w: obj.airz});
   // line 객체가 생성되어 있지 않으면 생성합니다.
   if (!line) {
     const material1 = new THREE.LineBasicMaterial({ color: 0x0000ff });
@@ -190,9 +243,9 @@ form.addEventListener('submit', function(e) {
   }
 
   // 기존의 코드에서 points 배열을 사용하는 부분을 모두 제거합니다.
-  x.innerText = obj.x;
-  y.innerText = obj.y;
-  z.innerText = obj.z;
+  lx.innerText = obj.x;
+  ly.innerText = obj.y;
+  lz.innerText = obj.z;
   pitch.innerText = obj.pitch;
   yaw.innerText = obj.yaw;
   roll.innerText = obj.roll;
@@ -201,6 +254,7 @@ form.addEventListener('submit', function(e) {
   t.innerText = obj.t;
   h.innerText = obj.h;
   at.innerText = obj.at;
+ // console.log(airFlowData); // airFlowData를 콘솔에 출력
 });
 
 mapboxgl.accessToken = 'pk.eyJ1IjoidGFleW91IiwiYSI6ImNsZHY2ajVkejA4MGszdm5vaWpvdG41Nm0ifQ.05ZauoKkriS9v4sp6ozTAA';
@@ -238,7 +292,7 @@ rotateZ: modelRotate[2],
 scale: modelAsMercatorCoordinate.meterInMercatorCoordinateUnits()
 };
 
-const THREE = window.THREE;
+
 
 // configuration of the custom layer for a 3D model per the CustomLayerInterface
 const customLayer = {
@@ -374,11 +428,37 @@ function animate(){
   // increment count
   count2++;
   //그래프3 끝
+  
  
-  renderer.render(scene,camera);  
+  renderer1.render(scene1, camera1);
+
+  
+
 }
 animate();
-}//,
+
+
+var material1 = new THREE.MeshBasicMaterial({ color: 0xffff00 });
+
+function airflowdraw(){
+//air flow log print
+  //console.log(airFlowData)
+  airFlowData.forEach(function(d, i) {
+    vertices.push(d.x, d.y, d.z);
+    vertices.push(d.x + d.u, d.y + d.v, d.z + d.w);
+    indices.push(i*2, i*2+1);
+  });
+  geometry1.setAttribute( 'position', new THREE.Float32BufferAttribute(vertices, 3));
+geometry1.setIndex(indices);
+var lines1 = new THREE.LineSegments(geometry1, material1);
+scene1.add(lines1);
+vertices = [];
+indices = [];
+}
+setInterval(airflowdraw, 1000);
+
+}
+//,
 //undefined, function(error) {
 //  console.error(error);
 //}
@@ -486,3 +566,28 @@ map.addLayer(
 labelLayerId
 );
 });
+
+//여기부터 air flow log
+
+
+
+		// // 측정 지점의 수
+		// var numPoints = 200;
+
+		// // 측정 지점 생성
+		// for (var i = 0; i < numPoints; i++) {
+		// 	var x = Math.random() * 100 - 50;  // x 좌표
+		// 	var y = Math.random() * 100 - 50;  // y 좌표
+		// 	var z = Math.random() * 100 - 50;  // z 좌표
+
+		// 	// 공기 흐름 속도 계산
+		// 	var u = Math.random() * 20 - 5;    // x 방향 속도
+		// 	var v = Math.random() * 20 - 5;    // y 방향 속도
+		// 	var w = Math.random() * 20 - 5;    // z 방향 속도
+
+		// 	// 측정 지점 정보 저장
+		// 	airFlowData.push({x: x, y: y, z: z, u: u, v: v, w: w});
+		// }
+
+
+     

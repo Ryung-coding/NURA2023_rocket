@@ -8,7 +8,7 @@
 #include <ArduinoJson.h>
 #include <ArduinoJson.hpp>
 
-StaticJsonDocument<200> doc;
+StaticJsonDocument<300> doc;
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(9600);
@@ -23,6 +23,9 @@ void loop() {
   doc["z"] = 200*sin(radians(i/2));
   doc["ex"] = 360;
   doc["ey"] = 360;
+  doc["airx"] = float(i+1)/2;
+  doc["airy"] = i;
+  doc["airz"] = float(i+1)/3;
   doc["pitch"] =-float(i)/150;
   doc["roll"] = 0;//-float(i)/100;
   doc["yaw"] = -float(i)/150;
