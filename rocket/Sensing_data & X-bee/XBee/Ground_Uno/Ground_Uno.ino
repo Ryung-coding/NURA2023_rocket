@@ -2,7 +2,7 @@
 // 없음
 
 #include <SoftwareSerial.h> // 시리얼 통신 라이브러리
-#define LEN_OF_SENSOR_ARRAY 10 // 센서 값 배열의 길이
+#define LEN_OF_SENSOR_ARRAY 14 // 센서 값 배열의 길이
 
 int XBeeTx = 0;   // Tx (보내는핀 설정)
 int XBeeRx = 1;   // Rx (받는핀 설정)
@@ -38,6 +38,7 @@ void printValueOfArray(String Array[], int LenOfArray){ // String 배열과 배�
   for (int i = 0; i < LenOfArray; i++){
     Serial.print(Array[i]);
     Serial.print(',');
+    Serial.print(' ');
   }
   Serial.println();
 }
