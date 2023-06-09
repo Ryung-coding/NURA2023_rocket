@@ -14,9 +14,13 @@
 #include <DHT.h>                // DHT22 라이브러리
 #include <TinyGPS.h>            // GPS 라이브러리
 #include <SD.h>                 // MicroSDCard 라이브러리
-#define LEN_OF_SENSOR_ARRAY 13  // 센서 값 배열의 길이
+#define LEN_OF_SENSOR_ARRAY 14  // 센서 값 배열의 길이
 
-
+//==========차압센서=======
+int offset = 0;
+double pre_v = 0;
+float alpha = 0.1;
+double air = 1.1839; //공기밀도 kg/m3
 // ===================== 센서 객체 선언 ====================
 Adafruit_BMP280 bmp;  // BMP280 객체
 DHT dht(2, DHT22);    // DHT22 객체
@@ -32,18 +36,19 @@ double Temperature, Humidity;               // 온도, 습도
 int16_t ax, ay, az, gx, gy, gz;             // 3축 가속도, 각속도
 float flat, flon, speedMPS, courseDegree;   // 위도, 경도, 속도, 각도
 unsigned long age;                          // GPS 정확도
-
+double v;
 double prevPressure, prevAltitude;                             
 double prevTemperature, prevHumidity;               
 int16_t prevax, prevay, prevaz, prevgx, prevgy, prevgz;             
-float prevflat, prevflon, prevspeedMPS, prevcourseDegree;   
+float prevflat, prevflon, prevspeedMPS, prevcourseDegree; 
+double prevv;  
 unsigned long prevage;                          
 
 bool sendData;  // 데이터를 보낼지 말지 결정하는 변수
 
 void setup() {
   Serial.begin(2400);   
-  Serial2.begin(2400);  // Due와의 시리얼 통신
+  Serial2.begin(9600);  // Due와의 시리얼 통신
   Wire.begin();   
   bmp.begin(0x76);
   dht.begin();
@@ -51,6 +56,9 @@ void setup() {
   initializeMicroSD();
   wdt_enable(WDTO_1S);  // Watchdog Timer 1초
   sendData = true;
+  for(int k = 0;k<10;k++){
+    offset += analogRead(A0) - 512;
+  } offset = offset / 10;
 }// Setup End
 
 
@@ -60,7 +68,18 @@ void loop() {
 
 // MicroSD txt파일 열기
   myFile = SD.open("value.txt", FILE_WRITE);
-
+// 차압센서
+  float adc = 0;
+  for(int k = 0;k<100;k++){
+    adc += analogRead(A0) - offset;
+  } adc = adc/100;
+  double v;
+  //  512
+  if(adc > 514){
+    v = sqrt((2000*(5*adc/1023.0 - 2.5))/air); 
+  }else if(adc < 510){
+    v = -sqrt((-2000*(5*adc/1023.0 - 2.5))/air); 
+  }
 
 // BMP280에서 기압, 고도 값 읽어오기
   Pressure = bmp.readPressure()/1000;
@@ -122,7 +141,7 @@ void loop() {
   if (sendData){
     for (int i = 0; i < LEN_OF_SENSOR_ARRAY; i++){
       Serial.print(char('a' + i));
-      if (i == 7 || i == 8){                    // 데이터가 위도 혹은 경도이면 소수점 아래 6자리까지 전송
+      if (i == 8 || i == 9){                    // 데이터가 위도 혹은 경도이면 소수점 아래 6자리까지 전송
         Serial.print(sensorData[i], 6);
         myFile.print(sensorData[i], 6);
       }
@@ -134,7 +153,7 @@ void loop() {
       myFile.print(',');
     }
     
-    for(int i = 0; i < 7; i++){
+    for(int i = 0; i < 8; i++){
       Serial2.print(sensorData[i]);
       Serial2.print(',');
     }
@@ -171,7 +190,9 @@ void checkSensorData(){
     Temperature = prevTemperature;
     Humidity = prevHumidity;
   }
-  
+  //차압센서 데이터 체크
+  if (isnan(v)){
+    v = prevv;}
   // MPU9250 데이터 체크
   
   if (ax == -1 && ay == -1){
@@ -187,6 +208,7 @@ void putSensorDataIntoArray(){
   prevPressure = Pressure;  prevAltitude = Altitude;  // BMP280
   prevTemperature = Temperature;  prevHumidity = Humidity;  // DHT22
   prevax = ax;  prevay = ay;  prevaz = az;  prevgx = gx;  prevgy = gy;  prevgz = gz;  // MPU9250
+  prevv = v; //차압센서
   
   // 센서 값 배열에 각 센서 값 저장
   sensorData[0] = ax;
@@ -196,12 +218,13 @@ void putSensorDataIntoArray(){
   sensorData[4] = gy;
   sensorData[5] = gz;
   sensorData[6] = speedMPS;
-  sensorData[7] = flat;
-  sensorData[8] = flon;
-  sensorData[9] = Pressure;
-  sensorData[10] = Altitude;
-  sensorData[11] = Temperature;
-  sensorData[12] = Humidity;
+  sensorData[7] = v;
+  sensorData[8] = flat;
+  sensorData[9] = flon;
+  sensorData[10] = Pressure;
+  sensorData[11] = Altitude;
+  sensorData[12] = Temperature;
+  sensorData[13] = Humidity;
 }
 
 
