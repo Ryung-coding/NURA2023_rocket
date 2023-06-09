@@ -4,57 +4,73 @@
 // BMP280 : SCL - 21(SCL), SDA - 20(SDA)
 // DHT22  : SIG - 2
 // IMU    : SCL - SCL, SDA - SDA
-// GPS    : TXD - 18(RX1), RXD - 19(TX1) 
+// GPS    : TXD - 19(RX1), RXD - 18(TX1) 
 // MicroSD : MISO - 50, MOSI - 51, SCK - 52, SC - 53
 
-
+// ===================== 헤더파일 선언 =====================
+#include <avr/wdt.h>            // Watchdog Timer 라이브러리
 #include <Wire.h>               // I2C 통신용 라이브러리
 #include <Adafruit_BMP280.h>    // BMP280 라이브러리
 #include <DHT.h>                // DHT22 라이브러리
 #include <TinyGPS.h>            // GPS 라이브러리
 #include <SD.h>                 // MicroSDCard 라이브러리
-#define LEN_OF_SENSOR_ARRAY 14  // 센서 값 배열의 길이
+#define LEN_OF_SENSOR_ARRAY 13  // 센서 값 배열의 길이
 
 
+// ===================== 센서 객체 선언 ====================
 Adafruit_BMP280 bmp;  // BMP280 객체
 DHT dht(2, DHT22);    // DHT22 객체
 TinyGPS gps;          // GPS 객체
 File myFile;          // MicroSDCard 객체
 
+
+// ================= 센서 값 배열, 변수 선언 ================
 double sensorData[LEN_OF_SENSOR_ARRAY];     // 센서 값 배열
 
 double Pressure, Altitude;                  // 기압, 고도
 double Temperature, Humidity;               // 온도, 습도
 int16_t ax, ay, az, gx, gy, gz;             // 3축 가속도, 각속도
-float flat, flon, speedMPS, courseDegree;  // 위도, 경도, 속도, 각도
+float flat, flon, speedMPS, courseDegree;   // 위도, 경도, 속도, 각도
 unsigned long age;                          // GPS 정확도
 
+double prevPressure, prevAltitude;                             
+double prevTemperature, prevHumidity;               
+int16_t prevax, prevay, prevaz, prevgx, prevgy, prevgz;             
+float prevflat, prevflon, prevspeedMPS, prevcourseDegree;   
+unsigned long prevage;                          
+
+bool sendData;  // 데이터를 보낼지 말지 결정하는 변수
 
 void setup() {
-  Serial.begin(2400);
-  Serial2.begin(2400);
-  Wire.begin();
+  Serial.begin(2400);   
+  Serial2.begin(2400);  // Due와의 시리얼 통신
+  Wire.begin();   
   bmp.begin(0x76);
   dht.begin();
   Serial1.begin(9600);  // GPS 보드레이트는 9600으로 고정
-  initializeMicroSD();  
+  initializeMicroSD();
+  wdt_enable(WDTO_1S);  // Watchdog Timer 1초
+  sendData = true;
 }// Setup End
 
 
 void loop() {
-//  파일을 열어 쓸 준비를 합니다. 한 번에 하나의 파일만 열 수 있습니다.
+// Watchdog Timer 리셋
+  wdt_reset();  
+
+// MicroSD txt파일 열기
   myFile = SD.open("value.txt", FILE_WRITE);
 
-//  BMP280에서 기압, 고도 값 읽어오기
+
+// BMP280에서 기압, 고도 값 읽어오기
   Pressure = bmp.readPressure()/1000;
   Altitude = bmp.readAltitude(1019.1);
-  
+
 // DHT22에서 온도, 습도 값 읽어오기
   Temperature = dht.readTemperature();
   Humidity = dht.readHumidity();
   
-  
-//  MPU9250에서 3축 가속도, 각속도 값 읽어오기
+// MPU9250에서 3축 가속도, 각속도 값 읽어오기
   Wire.beginTransmission(0x68);
   Wire.write(0x3B);                     // 시작 주소 0x3B (ACCEL_XOUT_H)
   Wire.endTransmission(false);
@@ -68,47 +84,125 @@ void loop() {
   gy = Wire.read() << 8 | Wire.read();  // Y축 자이로스코프 값 읽어오기
   gz = Wire.read() << 8 | Wire.read();  // Z축 자이로스코프 값 읽어오기
 
-//  GPS 센서에서 위도, 경도, 속도, 각도 값 읽어오기
+// GPS 센서에서 위도, 경도, 속도, 각도 값 읽어오기
   gps.f_get_position(&flat, &flon, &age);   // 위도, 경도, 정확도 얻음
   speedMPS = gps.f_speed_mps();             // 속도 얻음
   courseDegree = gps.f_course();            // 각도 얻음
 
+//  Serial.print(ax);
+//  Serial.print("  ");
+//  Serial.print(ay);
+//  Serial.print("  ");
+//  Serial.print(az);
+//  Serial.print("  ");
+//  Serial.print(gx);
+//  Serial.print("  ");
+//  Serial.print(gy);
+//  Serial.print("  ");
+//  Serial.print(gz);
+//  Serial.print("  ");
+//  Serial.print(Pressure);
+//  Serial.print("  ");
+//  Serial.print(Altitude);
+//  Serial.print("  ");
+//  Serial.print(Temperature);
+//  Serial.print("  ");
+//  Serial.print(Humidity);
+//  Serial.print("  ");
+//  Serial.println();
 
-//  배열에 센서 값 저장하기
-  sensorData[0] = Pressure;
-  sensorData[1] = Altitude;
-  sensorData[2] = Temperature;
-  sensorData[3] = Humidity;
-  sensorData[4] = ax;
-  sensorData[5] = ay;
-  sensorData[6] = az;
-  sensorData[7] = gx;
-  sensorData[8] = gy;
-  sensorData[9] = gz;
-  sensorData[10] = speedMPS;
-  sensorData[11] = flat;
-  sensorData[12] = flon;
-  sensorData[13] = courseDegree;
 
+// 센서 값들이 이상하지 않은지 체크하기
+  checkSensorData();
 
-//  시리얼 통신으로 센서 값 배열 보내기, MicroSD에 입력하기
-  for (int i = 0; i < LEN_OF_SENSOR_ARRAY; i++){
-    Serial.print(char('a' + i));
-    Serial.print(sensorData[i]);
-    writeValue(String(sensorData[i]));
-    writeValue(",");
+// 센서 값들 배열에 저장하기
+  putSensorDataIntoArray();
+
+// 시리얼 통신으로 센서 값 배열 보내기, MicroSD에 입력하기
+  if (sendData){
+    for (int i = 0; i < LEN_OF_SENSOR_ARRAY; i++){
+      Serial.print(char('a' + i));
+      if (i == 7 || i == 8){                    // 데이터가 위도 혹은 경도이면 소수점 아래 6자리까지 전송
+        Serial.print(sensorData[i], 6);
+        myFile.print(sensorData[i], 6);
+      }
+      else{                                     // 그 외에는 원래대로 전송 
+        Serial.print(sensorData[i]);
+        myFile.print(sensorData[i]);
+      }
+      Serial.print(' ');
+      myFile.print(',');
+    }
+    
+    for(int i = 0; i < 7; i++){
+      Serial2.print(sensorData[i]);
+      Serial2.print(',');
+    }
+    Serial.println();
+    Serial2.println();
+    myFile.println();
+    smartdelay(100);
+
+    myFile.close(); // 파일을 닫습니다.
   }
-  for(int j = 4; j < 11; j++){
-    Serial2.print(char('a' + j));
-    Serial2.print(sensorData[j]);
-  }
-  Serial.println();
-  Serial2.println();
-  writeValue("\n");
-  smartdelay(100);
-
-  myFile.close(); // 파일을 닫습니다.
 }// Loop End
+
+
+
+void checkSensorData(){
+  // BMP280 데이터 체크
+  if (isnan(Altitude)){
+    Pressure = prevPressure;
+    Altitude = prevAltitude;
+  }
+  if (Altitude > 1462){
+    Pressure = prevPressure;
+    Altitude = prevAltitude;
+    bmp.begin(0x76);
+  }
+  if (Pressure == 0 && Altitude == 0){
+    Pressure = prevPressure;
+    Altitude = prevAltitude;
+    bmp.begin(0x76);
+  }
+
+  // DHT22 데이터 체크
+  if (isnan(Temperature)){
+    Temperature = prevTemperature;
+    Humidity = prevHumidity;
+  }
+  
+  // MPU9250 데이터 체크
+  
+  if (ax == -1 && ay == -1){
+    ax = prevax;  ay = prevay;  az = prevaz;  gx = prevgx;  gy = prevgy;  gz = prevgz;
+  }
+  if (ax == 0 && ay == 0) sendData = false;
+  else sendData = true;
+}
+
+
+void putSensorDataIntoArray(){
+  // 이전 센서 값에 현재 센서 값 저장
+  prevPressure = Pressure;  prevAltitude = Altitude;  // BMP280
+  prevTemperature = Temperature;  prevHumidity = Humidity;  // DHT22
+  prevax = ax;  prevay = ay;  prevaz = az;  prevgx = gx;  prevgy = gy;  prevgz = gz;  // MPU9250
+  
+  // 센서 값 배열에 각 센서 값 저장
+  sensorData[0] = ax;
+  sensorData[1] = ay;
+  sensorData[2] = az;
+  sensorData[3] = gx;
+  sensorData[4] = gy;
+  sensorData[5] = gz;
+  sensorData[6] = speedMPS;
+  sensorData[7] = flat;
+  sensorData[8] = flon;
+  sensorData[9] = Pressure;
+  sensorData[10] = Altitude;
+  sensorData[11] = Temperature;
+  sensorData[12] = Humidity;
+}
 
 
 // GPS용 딜레이
@@ -131,11 +225,4 @@ void initializeMicroSD(){
     Serial.println("initialization failed!"); // SD카드 모듈 초기화에 실패하면 에러를 출력합니다.
   }
   Serial.println("initialization done.");
-}
-
-
-// string 변수를 매개변수로 받아 MicroSD의 txt 파일에 작성
-void writeValue(String val){  
-  // 파일이 정상적으로 열리면 파일에 문자를 작성(추가)합니다.
-  if (myFile) myFile.print(val);
 }

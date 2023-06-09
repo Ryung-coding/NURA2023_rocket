@@ -16,6 +16,8 @@
 <script src="https://unpkg.com/three@0.126.0/examples/js/loaders/GLTFLoader.js"></script>
 <script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
 <script src='https://d3js.org/d3.v3.min.js'></script>
+<script src="https://cdn.jsdelivr.net/npm/three/examples/js/controls/OrbitControls.js"></script>
+
 		<script type="importmap">
 			{
 				"imports": {
@@ -25,7 +27,11 @@
 			}
 		</script>
   <style>
-	
+    body{
+      background-color: rgb(4, 35, 53);
+      margin : 0;
+      /*overflow: hidden;*/
+    }
 		#messages {
 			color: black;
 			width: 10vw;
@@ -41,14 +47,16 @@
       margin-top: 10px;
 		}
     p{
-      text-align: center;
-
+      text-align: left;
+      font-size: small;
+      line-height: 10px;
+      color : white;
     }
 
 		.data {
-			font-size: 15px;
+			font-size: small;
       font-weight: bold;
-			color: #000000;
+			color: white;
 		}
 	
 	
@@ -57,13 +65,19 @@
     }
     .line {
       fill: none;
-      stroke: #000;
+      stroke: white;
       stroke-width: 1.5px;
+    }
+    .axis text{
+      stroke : white;
+      stroke-width: 0.3px;
+
     }
     .axis path,
     .axis line {
       fill: none;
-      stroke: #000;
+      stroke: white;
+      color : white;
       shape-rendering: crispEdges;
     }
     path.line {
@@ -72,43 +86,100 @@
   stroke-width: 2px;
 }
 
+
 </style>
 
  </head>
  <body>
 	
     <div id="map" style="
-    width : 30vw; height : 100vh;
+    margin-top : 2vh;
+    margin-bottom: 2vh;
+    margin-left : 1vw;
+    width : 30vw; height : 96vh;
     float: left;
     "></div>
     <div style="
-    width : 30vw; height : 100vh;
-    float: left; border: 1px solid red;
+    margin-top : 2vh;
+    margin-bottom: 2vh;
+    width : 30vw; height : 96vh;
+    float: left; /*border: 1px solid red;*/
+    margin-left: 10px;
     ">
       <div style="
-      width : 100%; height : 49%;
-      float: left; border: 1px solid red;
+      width : 100%; height : 85%;
+      float: left; /*border: 1px solid red;*/
+      background-color: rgb(6, 56, 85);
       ">
-      skew-t log-p Graph</div>
-      <div id="chart" style="
-      width : 100%; height : 49%;
-      float: left; border: 1px solid red;
-      ">
-    
-      <script  src="js/xyz_trace.js"></script>
+      <div id="chart" ></div>
+      <div id="chart1"></div>
+      <div id="chart2"></div>
     </div>
+    <div style="
+      width : 100%; height : 13%;
+      float: left; /*border: 1px solid red;*/
+      ">
+    <div style="margin-left : 5px; margin-top : 5px;width : 50%; height : 70%; float : left;  float: left; /*border: 1px solid red;*/">
+      <p style="margin-top: 2px;"> 현재 좌표(
+      <span id="lx" class="data"></span>,
+      <span id="ly" class="data"></span>,
+      <span id="lz" class="data"></span>)
+    </p>
+    <p> 현재 기울기(
+      <span id="pitch" class="data"></span>,
+      <span id="yaw" class="data"></span>,
+      <span id="roll" class="data"></span>)
+    </p>
+    <p>예상낙하지점 좌표(
+      <span id="ex" class="data"></span>,
+      <span id="ey" class="data"></span>)</p> </div>
+
+      <div style="margin-left : 5px; margin-top: 5px; width : 40%; height : 70%;text-align: right; float: left; /*border: 1px solid red;*/">
+       <p style="margin-top: 2px;">온도
+    <span id="t" class="data"></span>°C</p>
+	  <p>습도
+      <span id="h" class="data"></span>%</p>
+      <p>기압
+    <span id="at" class="data"></span>hPa</p>
+      </div>
+      <form id="form" action="">
+        <input style="margin-left: 10px; margin-top : 1px; width : 83%;
+        background-color: rgb(240, 240, 240);
+        border: 1px solid black;
+        border-radius: 10px;" id="input" autocomplete="off" /><button
+        style="margin-left: 3px; margin-top : 1px; width : 3vw;
+        background-color: rgb(240, 240, 240);
+        border: 1px solid black;
+        border-radius: 10px; font-weight: bold;" >전송</button>
+      </form>
+      </div>
+      
+
       </div>
    <div style="
-   width : 37vw; height : 100vh;
-   float: left; border: 1px solid red;
+   margin-top: 2vh;
+   margin-bottom: 2vh;
+   margin-left : 1vw;
+   width : 34vw; height : 96vh;
+   float: left; /*border: 1px solid red;*/
    ">
     <div style="
-    width : 100%; height : 49%;
-    float: left; border: 1px solid red;
+    width : 100%; height : 46%;
+    
+    float: left; /*border: 1px solid red;*/
     ">
       
+      <div id="airflow" ></div>
+     
+    </div>
+    <div style="
+    width : 100%; height : 46%;
+    
+    float: left; /*border: 1px solid red;*/
+    ">
       
-      air flow log
+      skew-t log-p Graph
+      
     </div>
    <!--<div id="messages" style="width :20.5vw; height : 100px; background-color: rgb(247, 234, 255);">
     
@@ -122,7 +193,7 @@
   </div>-->
 
   
-  
+  <!--
    <div id="messages" style="background-color: rgb(253, 224, 224);">
 
     <div
@@ -130,22 +201,6 @@
       <div style="float: left; line-height: 30px; margin-left: 5px; font-weight: bold;"></div>
       
     </div>
-    <p style="margin-top: 40px;"> 현재 좌표</p>
-    <p>(
-      <span id="x" class="data"></span>,
-      <span id="y" class="data"></span>,
-      <span id="z" class="data"></span>)
-    </p>
-    <p> 현재 기울기</p>
-    <p>(
-      <span id="pitch" class="data"></span>,
-      <span id="yaw" class="data"></span>,
-      <span id="roll" class="data"></span>)
-    </p>
-    <p>예상낙하지점 좌표</p>
-    <p>(
-      <span id="ex" class="data"></span>,
-      <span id="ey" class="data"></span>)</p>
   </div>
 
   <div id="messages" style="background-color: rgb(255, 243, 221);">
@@ -155,15 +210,7 @@
       <div style="float: left; line-height: 30px; margin-left: 5px; font-weight: bold;"></div>
       
     </div>
-    <p style="margin-top: 40px;">온도</p>
-    <p>
-    <span id="t" class="data"></span>°C</p>
-	  <p>습도</p>
-    <p>
-      <span id="h" class="data"></span>%</p>
-      <p>기압</p>
-    <p>
-    <span id="at" class="data"></span>hPa</p>
+   
   </div>
 
   <div id="messages" style="background-color: rgb(240, 255, 221);">
@@ -171,23 +218,11 @@
     <div
       style="border-radius: 10px 10px 0px 0px; float: left; background-color: rgb(194, 255, 119); width:100%; height: 20px;">
       <div style="float: left; line-height: 30px; margin-left: 5px; font-weight: bold;"></div>
-      <script type="text/javascript">
-      
-        function showImage(){
-         //var imgNum=Math.round(Math.random()*3);
-         var objImg=document.getElementById("introimg");
-         objImg.src='/image1.jpg';
-         setTimeout(showImage,100);
-        }
-      
-       </script>
+     
       
     </div>
     <div>
-      <img id="introimg" style="width : 150px; margin-top: 30px; margin-left: 20px;">
-      <script type="text/javascript">
-        showImage();
-      </script>
+      
     </div>
   </div>
   
@@ -198,30 +233,10 @@
       <div style="float: left; line-height: 30px; margin-left: 5px; font-weight: bold;"></div>
       
     </div>
-    <script type="text/javascript">
-    
-      function showImage1(){
-       //var imgNum=Math.round(Math.random()*3);
-       var objImg=document.getElementById("image2");
-       objImg.src='/image2.jpg';
-       setTimeout(showImage,100);
-      }
-    
-     </script>
-    
-    <img id="image2" style="width : 150px; margin-top: 30px; margin-left: 20px;">
-    <script type="text/javascript">
-      showImage1();
-    </script>
+   
 </div>
-<form id="form" action="">
-  <input style="margin-left: 10px; margin-top : 10px; width : 17vw;
-  background-color: rgb(240, 240, 240);
-  border-radius: 10px;" id="input" autocomplete="off" /><button
-  style="margin-left: 3px; margin-top : 10px; width : 3vw;
-  background-color: rgb(240, 240, 240);
-  border-radius: 10px;" >전송</button>
-</form>
+-->
+
 </div>
 
     

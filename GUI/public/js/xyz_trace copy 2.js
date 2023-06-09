@@ -16,7 +16,7 @@ var lineGenerator = d3.svg.line()
     .x(function(d, i) { return xScale(d.x); })
     .y(function(d, i) { return yScale(d.y); });
 
-    var svg = d3.select("#chart").append("svg")
+    var svg = d3.select("#chart2").append("svg")
     .attr("width", width + margin.left + margin.right)
     .attr("height", height + margin.top + margin.bottom)
   .append("g")
