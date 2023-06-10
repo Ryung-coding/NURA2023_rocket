@@ -7,13 +7,14 @@ Adafruit_PWMServoDriver pwm=Adafruit_PWMServoDriver();
 
 
 //calibration Value
-#define sampling_time 0.01 
+ 
 #define set_duty 1750                     // setting zero angular velocity[pca9685-cell]
 #define range_duty 500                    // control duty range angular velocity[pca9685-cell] 변동가능성 있음
 // 1800~2300us을 기준으로 moment wheel이 작동함
 
 
 // Servo pin
+#define sampling_time 0.003 //s
 #define servopin_pitch 9
 #define servopin_yaw 10
 
@@ -42,10 +43,9 @@ double past_roll = 0;
 double past_pitch = 0; 
 double past_yaw = 0;
 
-
-unsigned long dt = 0;         // delta_time[ms]
-unsigned long start_time = 0; // Initial Time Measurement[ms]
-unsigned long end_time = 0;   // Final time measurement[ms]
+double dt = 0;         // delta_time[ms]
+double start_time = 0; // Initial Time Measurement[ms]
+double end_time = 0;   // Final time measurement[ms]
 
 double sensor_roll = 0;
 double sensor_pitch = 0;
@@ -116,7 +116,7 @@ void control_SERVO()
 
 void setup()
 {
-  Serial.begin(115200);
+  Serial.begin(1000000);
   
   servo_pitch.attach(servopin_pitch);
   servo_yaw.attach(servopin_yaw);
@@ -130,15 +130,23 @@ void setup()
 }
 
 void loop()
-{
-  start_time = millis();
-  dt = (start_time - end_time) * 0.001;
-  end_time = millis();
+{  
   
+  
+  end_time = millis();
+  dt = (end_time - start_time)*0.001; //[s] 1000ms -> 0.001 = 1s
+  start_time = millis();
+
   while(dt < sampling_time)
   {
-    delay(1);
+    delayMicroseconds(1);
+    end_time = millis();
+    dt = (end_time - start_time)*0.001; 
   }
+  Serial.println(1000*dt);
+
+
+  
   
   Input_data();
 
@@ -148,6 +156,9 @@ void loop()
 
   control_BLDC();
   control_SERVO();
- 
+
+  past_roll = sensor_roll;
+  past_pitch = sensor_pitch;
+  past_yaw = sensor_yaw;
 
 }
