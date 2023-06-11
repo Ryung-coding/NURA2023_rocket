@@ -1,5 +1,6 @@
 var socket = io();
 var obj;
+var modify_obj;
 
 var points = [];
 var airFlowData = [];
@@ -221,6 +222,7 @@ form.addEventListener('submit', function(e) {
  socket.on('data', (msg) => {
   //console.log(msg);
   obj = JSON.parse(msg);
+  //modify_obj = {x: obj.x, y: obj.y, z: obj.z, u: obj.airx, v: obj.airy, w: obj.airz};
   console.log(obj);
 
 
@@ -269,7 +271,7 @@ antialias: true // create the gl context with MSAA antialiasing, so custom layer
 });
 
 // parameters to ensure the model is georeferenced correctly on the map
-modelOrigin = [127.20799627897930, 34.610];
+modelOrigin = [127.20799627897930, 34.610]; //현장에서 바꿈
 modelAltitude = 0;
 modelRotate = [Math.PI / 2, 0, 0];
 

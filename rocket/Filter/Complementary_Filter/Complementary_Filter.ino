@@ -138,5 +138,5 @@ void loop()
       
   
   //Output_data(roll_filter, pitch_filter, yaw_filter);
-  Output_data(ax, ay, ax);
+  Output_data(ax, ay, az);
 }
