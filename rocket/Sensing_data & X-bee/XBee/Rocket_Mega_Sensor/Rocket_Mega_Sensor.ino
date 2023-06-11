@@ -5,6 +5,7 @@
 // DHT22  : SIG - 2
 // IMU    : SCL - SCL, SDA - SDA
 // GPS    : TXD - 19(RX1), RXD - 18(TX1) 
+// MPXV7002DP : ANALOG - A0
 // MicroSD : MISO - 50, MOSI - 51, SCK - 52, SC - 53
 
 // ===================== 헤더파일 선언 =====================
@@ -16,11 +17,6 @@
 #include <SD.h>                 // MicroSDCard 라이브러리
 #define LEN_OF_SENSOR_ARRAY 14  // 센서 값 배열의 길이
 
-//==========차압센서=======
-int offset = 0;
-double pre_v = 0;
-float alpha = 0.1;
-double air = 1.1839; //공기밀도 kg/m3
 // ===================== 센서 객체 선언 ====================
 Adafruit_BMP280 bmp;  // BMP280 객체
 DHT dht(2, DHT22);    // DHT22 객체
@@ -34,17 +30,25 @@ double sensorData[LEN_OF_SENSOR_ARRAY];     // 센서 값 배열
 double Pressure, Altitude;                  // 기압, 고도
 double Temperature, Humidity;               // 온도, 습도
 int16_t ax, ay, az, gx, gy, gz;             // 3축 가속도, 각속도
-float flat, flon, speedMPS, courseDegree;   // 위도, 경도, 속도, 각도
+float flat, flon, speedGPS, courseDegree;   // 위도, 경도, 속도, 각도
 unsigned long age;                          // GPS 정확도
-double v;
+double speedDP;                             // 차압 센서 속도
 double prevPressure, prevAltitude;                             
 double prevTemperature, prevHumidity;               
 int16_t prevax, prevay, prevaz, prevgx, prevgy, prevgz;             
-float prevflat, prevflon, prevspeedMPS, prevcourseDegree; 
-double prevv;  
-unsigned long prevage;                          
+float prevFlat, prevFlon, prevSpeedGPS, prevCourseDegree; 
+double prevSpeedDP;  
+unsigned long prevAge;     
 
-bool sendData;  // 데이터를 보낼지 말지 결정하는 변수
+bool sendData;                              // 데이터를 보낼지 말지 결정하는 변수
+const char cSTX = 2, cETX = 3;              // 데이터의 시작과 끝을 구분하는 문자             
+
+// ================ MPXV7002DP 관련 상수  =================
+int offset = 0;
+float alpha = 0.1;
+double air = 1.1839;                        //공기밀도 kg/m3
+
+
 
 void setup() {
   Serial.begin(2400);   
@@ -56,10 +60,12 @@ void setup() {
   initializeMicroSD();
   wdt_enable(WDTO_1S);  // Watchdog Timer 1초
   sendData = true;
-  for(int k = 0;k<10;k++){
+  
+  for(int i = 0; i < 10; i++){
     offset += analogRead(A0) - 512;
   } offset = offset / 10;
 }// Setup End
+
 
 
 void loop() {
@@ -68,18 +74,6 @@ void loop() {
 
 // MicroSD txt파일 열기
   myFile = SD.open("value.txt", FILE_WRITE);
-// 차압센서
-  float adc = 0;
-  for(int k = 0;k<100;k++){
-    adc += analogRead(A0) - offset;
-  } adc = adc/100;
-  double v;
-  //  512
-  if(adc > 514){
-    v = sqrt((2000*(5*adc/1023.0 - 2.5))/air); 
-  }else if(adc < 510){
-    v = -sqrt((-2000*(5*adc/1023.0 - 2.5))/air); 
-  }
 
 // BMP280에서 기압, 고도 값 읽어오기
   Pressure = bmp.readPressure()/1000;
@@ -105,30 +99,17 @@ void loop() {
 
 // GPS 센서에서 위도, 경도, 속도, 각도 값 읽어오기
   gps.f_get_position(&flat, &flon, &age);   // 위도, 경도, 정확도 얻음
-  speedMPS = gps.f_speed_mps();             // 속도 얻음
+  speedGPS = gps.f_speed_mps();             // 속도 얻음
   courseDegree = gps.f_course();            // 각도 얻음
 
-//  Serial.print(ax);
-//  Serial.print("  ");
-//  Serial.print(ay);
-//  Serial.print("  ");
-//  Serial.print(az);
-//  Serial.print("  ");
-//  Serial.print(gx);
-//  Serial.print("  ");
-//  Serial.print(gy);
-//  Serial.print("  ");
-//  Serial.print(gz);
-//  Serial.print("  ");
-//  Serial.print(Pressure);
-//  Serial.print("  ");
-//  Serial.print(Altitude);
-//  Serial.print("  ");
-//  Serial.print(Temperature);
-//  Serial.print("  ");
-//  Serial.print(Humidity);
-//  Serial.print("  ");
-//  Serial.println();
+// MPXV7002DP에서 속도 값 읽어오기
+  float adc = 0;
+  for(int i = 0; i < 100; i++){
+    adc += analogRead(A0) - offset;
+  } adc = adc/100;
+  //  512
+  if (adc > 514)      speedDP = sqrt((2000*(5*adc/1023.0 - 2.5))/air);   
+  else if (adc < 510) speedDP = -sqrt((-2000*(5*adc/1023.0 - 2.5))/air);
 
 
 // 센서 값들이 이상하지 않은지 체크하기
@@ -139,24 +120,32 @@ void loop() {
 
 // 시리얼 통신으로 센서 값 배열 보내기, MicroSD에 입력하기
   if (sendData){
+    Serial.print(char(cSTX));
+    
     for (int i = 0; i < LEN_OF_SENSOR_ARRAY; i++){
-      Serial.print(char('a' + i));
-      if (i == 8 || i == 9){                    // 데이터가 위도 혹은 경도이면 소수점 아래 6자리까지 전송
+      
+      // 데이터가 위도 혹은 경도이면 소수점 아래 6자리까지 전송
+      if (i == 8 || i == 9){                    
         Serial.print(sensorData[i], 6);
         myFile.print(sensorData[i], 6);
       }
-      else{                                     // 그 외에는 원래대로 전송 
+      
+      // 그 외에는 원래대로 전송
+      else{                                      
         Serial.print(sensorData[i]);
         myFile.print(sensorData[i]);
       }
-      Serial.print(' ');
+      Serial.print(',');
       myFile.print(',');
     }
-    
+
+    // DUE에는 각,가속도, 속도 값만 전송
     for(int i = 0; i < 8; i++){
       Serial2.print(sensorData[i]);
       Serial2.print(',');
     }
+    
+    Serial.print(char(cETX));
     Serial.println();
     Serial2.println();
     myFile.println();
@@ -190,11 +179,13 @@ void checkSensorData(){
     Temperature = prevTemperature;
     Humidity = prevHumidity;
   }
-  //차압센서 데이터 체크
-  if (isnan(v)){
-    v = prevv;}
-  // MPU9250 데이터 체크
   
+  // MPXV7002DP 데이터 체크
+  if (isnan(speedDP)){
+    speedDP = prevSpeedDP;
+  }
+    
+  // MPU9250 데이터 체크
   if (ax == -1 && ay == -1){
     ax = prevax;  ay = prevay;  az = prevaz;  gx = prevgx;  gy = prevgy;  gz = prevgz;
   }
@@ -208,7 +199,7 @@ void putSensorDataIntoArray(){
   prevPressure = Pressure;  prevAltitude = Altitude;  // BMP280
   prevTemperature = Temperature;  prevHumidity = Humidity;  // DHT22
   prevax = ax;  prevay = ay;  prevaz = az;  prevgx = gx;  prevgy = gy;  prevgz = gz;  // MPU9250
-  prevv = v; //차압센서
+  prevSpeedDP = speedDP; // MPXV7002DP
   
   // 센서 값 배열에 각 센서 값 저장
   sensorData[0] = ax;
@@ -217,8 +208,8 @@ void putSensorDataIntoArray(){
   sensorData[3] = gx;
   sensorData[4] = gy;
   sensorData[5] = gz;
-  sensorData[6] = speedMPS;
-  sensorData[7] = v;
+  sensorData[6] = speedGPS;
+  sensorData[7] = speedDP;
   sensorData[8] = flat;
   sensorData[9] = flon;
   sensorData[10] = Pressure;
