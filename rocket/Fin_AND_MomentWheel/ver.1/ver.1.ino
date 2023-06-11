@@ -56,45 +56,31 @@ double u_pitch = 0;
 double u_yaw = 0;
 
 String buff;
+String input_data;
 
+void Input_data()
+{
+ // gBuff 업데이트
+ buff = buff.substring(ipos1 + 1);
 
- void Input_data()
+ int data_len = input_data.length();
+ String temp = "";
+ int cnt = 1;
+
+ for (int i = 0; i < data_len; i++)
  {
-  if (Serial1.available() <= 0) return;   // Serial1으로 들어온 값이 없으면 종료
-
-  char c = Serial1.read();
-  buff += c;
-
-  // STX ~ ETX 찾기
-  int ipos0 = buff.indexOf(cSTX);
-  if (ipos0 < 0) return;
-  int ipos1 = buff.indexOf(cETX, ipos0);
-  if (ipos1 < 0) return;
-
-  // STX ~ ETX 빼고 내부만 얻기
-  String input_data = buff.substring(ipos0+1, ipos1);
-
-  // gBuff 업데이트
-  buff = buff.substring(ipos1 + 1);
-
-  int data_len = input_data.length();
-  String temp = "";
-  int cnt = 1;
-
-  for (int i = 0; i < data_len; i++)
-  {
-    if (input_data[i] == ',')
-    {
-      if (cnt == 1) sensor_roll = temp.toDouble();
-      else if (cnt == 2) sensor_pitch = temp.toDouble();
-      else sensor_yaw = temp.toDouble();
+   if (input_data[i] == ',')
+   {
+     if (cnt == 1) sensor_roll = temp.toDouble();
+     else if (cnt == 2) sensor_pitch = temp.toDouble();
+     else sensor_yaw = temp.toDouble();
       
-      temp = "";
-      cnt++;
-    }
-    else temp += input_data[i];
-  }
+     temp = "";
+     cnt++;
+   }
+   else temp += input_data[i];
  }
+}
 
 
 double computePD_BLDC(double goal, double sensor, double sensor_past, double dt, double Kp, double Kd, double bangbang_control_range)
@@ -166,11 +152,25 @@ void setup()
 
 void loop()
 {  
-  
-  
+
+ 
   end_time = millis();
   dt = (end_time - start_time)*0.001; //[s] 1000ms -> 0.001 = 1s
   start_time = millis();
+
+  if (Serial1.available() <= 0) return;   // Serial1으로 들어온 값이 없으면 종료
+
+  char c = Serial1.read();
+  buff += c;
+
+  // STX ~ ETX 찾기
+  int ipos0 = buff.indexOf(cSTX);
+  if (ipos0 < 0) return;
+  int ipos1 = buff.indexOf(cETX, ipos0);
+  if (ipos1 < 0) return;
+
+  // STX ~ ETX 빼고 내부만 얻기
+  input_data = buff.substring(ipos0+1, ipos1);
 
   while(dt < sampling_time)
   {
