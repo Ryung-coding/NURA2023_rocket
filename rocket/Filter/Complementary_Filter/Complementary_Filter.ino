@@ -137,5 +137,6 @@ void loop()
       Serial.println(speedDP);
       
   
-  Output_data(roll_filter, pitch_filter, yaw_filter);
+  //Output_data(roll_filter, pitch_filter, yaw_filter);
+  Output_data(ax, ay, ax);
 }
