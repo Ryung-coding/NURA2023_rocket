@@ -21,17 +21,16 @@ Adafruit_PWMServoDriver pwm=Adafruit_PWMServoDriver();
 int16_t ax, ay, az, gx, gy, gz; // we use only 'gz'(yaw angular velocity)
 
 //calibration Value
-#define I_max 300                       // Anti-windup max
+#define I_max 100                       // Anti-windup max
 #define I_min 0                         // Anti-windup min
-#define bangbang_control_range 0        // Bang-Bang control range factor
-#define set_duty 12                     // setting zero angular velocity[%]
-#define range_duty 10                    // control duty range angular velocity[%]
+#define bangbang_control_range 7        // Bang-Bang control range factor
+#define set_duty 20                     // setting zero angular velocity[%]
+#define range_duty 15                    // control duty range angular velocity[%]
 
 //PID gain
-//#define Kp 0.001           // P gain
-//#define Ki 0              // I gain
-//#define Kd 0.01             // D gain
-float Kp, Kd, Ki;
+#define Kp 1.5
+#define Ki 0
+#define Kd 0.87
 
 //Control & PID & LPF(Low Pass Filter) Value
 float P, I, D;
@@ -62,54 +61,33 @@ void Input_data()
   gz = Wire.read() << 8 | Wire.read();
   
   gz = (double) gz * 250 / 32768; //change 16bit -> degree/s
-
-  gz = constrain(gz, -50, 50);
-  
-  
 }
 
 float lowpassfilter(float filter, float data, float lowpass_constant)
 {
-  filter = data * (1 - lowpass_constant) + filter * lowpass_constant;
+  filter = filter * (1 - lowpass_constant) + data * lowpass_constant;
   return filter;   
 }
 
 float computePID(float r, float y, float dt)
 {
   float error = r - y; // angular velocity increasing -> PID u decreasing
-
-  if (error > 0) //pidbig factor
-  {
-    Kp = 0.2;
-    Ki = 0;
-    Kd = 0;
-  }
-  else
-  {
-    Kp = 0.01;
-    Ki = 0;
-    Kd = 0;
-    
-  }
   
   P = Kp * error;  
   I = I + Ki * error * dt;
-  D = Kd * (y - y_past) / dt;
+  D = Kd *(y - y_past) / dt;
   
   I = constrain(I , I_min , I_max);
   
-  u = P + I + D;
+  u = P + I - D;
   
   if ( abs(error) <= bangbang_control_range)
   {
     u = 0;
   }
   
- 
-
-  u = constrain(map(u + set_duty, 0, 100, 1613, 3226), 1613, map(set_duty + range_duty, 0, 100, 1613, 3226));
-
-  Serial.println(map(u, 1613, 3226, 0, 100));
+  u = constrain(map(set_duty, 0, 100, 1613, 3226) + u, 
+                map(set_duty - range_duty, 0, 100, 1613, 3226), map(set_duty + range_duty, 0, 100, 1613, 3226));
    
   return u; //[us]  
 }
@@ -141,6 +119,7 @@ void BLDC_setting(float duty)
 void setup() 
 {
   Serial.begin(9600);
+  pinMode(2, INPUT);
   Wire.begin();
   pwm.begin();
   pwm.setPWMFreq(380); //->measurement 400hz -> 2.5ms / so pca9685 input unit mean 0.620us
@@ -151,24 +130,36 @@ void setup()
 
 void loop() 
 { 
+  if(digitalRead(2) == HIGH)
+  {
+    BLDC_setting(0);
+    
+    while(1)
+    {
+      if(digitalRead(2) == LOW)
+       {
+        delay(100);
+        break; 
+       }
+    }
+  }
+    
     millisTime_f = millis();                             //measurement time
     dt = (millisTime_f - millisTime_i)*0.001;            //calculate time
     millisTime_i = millis();                             //measurement time
   
     Input_data();                                        //Road raw data
   
-    y = lowpassfilter(y_past , gz, 0.99);                 //filtering raw data
+    y = lowpassfilter(y_past , gz, 0.1);                 //filtering raw data
   
     r = 0;
     u = computePID(r, y, dt);                            //calculate PID
 
-    
+    Serial.print(0.062*(u - 1613));
     Serial.print(",");
     Serial.println(y);
+    
     control_motor();                                     //control BLDC using 'u' factor
   
-    y_past = y;                                          //up-date
-
-
-    
+    y_past = y;                                          //up-date    
 }
