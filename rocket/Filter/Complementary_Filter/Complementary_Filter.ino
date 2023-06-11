@@ -17,47 +17,31 @@ double  yaw_g = 0;
 const char cSTX = 2;
 const char cETX = 3;
 String buff;
+String input_data;
 
- void Input_data()
- {   
-  if (Serial1.available() <= 0) return;   // Serial1으로 들어온 값이 없으면 종료
+void Input_data()
+{   
+ int data_len = input_data.length();
+ String temp = "";
+ int cnt = 1;
 
-  char c = Serial1.read();
-  buff += c;
-
-  // STX ~ ETX 찾기
-  int ipos0 = buff.indexOf(cSTX);
-  if (ipos0 < 0) return;
-  int ipos1 = buff.indexOf(cETX, ipos0);
-  if (ipos1 < 0) return;
-
-  // STX ~ ETX 빼고 내부만 얻기
-  String input_data = buff.substring(ipos0+1, ipos1);
-
-  // gBuff 업데이트
-  buff = buff.substring(ipos1 + 1);
-
-  int data_len = input_data.length();
-  String temp = "";
-  int cnt = 1;
-
-  for (int i = 0; i < data_len; i++)
-  {
-    if (input_data[i] == ','){
-      if (cnt == 1) ax = temp.toDouble();
-      else if (cnt == 2) ay = temp.toDouble();
-      else if (cnt == 3) az = temp.toDouble();
-      else if (cnt == 4) gx = temp.toDouble();
-      else if (cnt == 5) gy = temp.toDouble();
-      else if (cnt == 6) gz = temp.toDouble();
-      else if (cnt == 7) speedGPSx = temp.toDouble();
-      else if (cnt == 8) speedGPSy = temp.toDouble();
-      else speedDP = temp.toDouble();
-      temp = "";
-      cnt++;
-    }
-    else temp += input_data[i];
-  }  
+ for (int i = 0; i < data_len; i++)
+ {
+   if (input_data[i] == ','){
+     if (cnt == 1) ax = temp.toDouble();
+     else if (cnt == 2) ay = temp.toDouble();
+     else if (cnt == 3) az = temp.toDouble();
+     else if (cnt == 4) gx = temp.toDouble();
+     else if (cnt == 5) gy = temp.toDouble();
+     else if (cnt == 6) gz = temp.toDouble();
+     else if (cnt == 7) speedGPSx = temp.toDouble();
+     else if (cnt == 8) speedGPSy = temp.toDouble();
+     else speedDP = temp.toDouble();
+     temp = "";
+     cnt++;
+   }
+   else temp += input_data[i];
+ }  
 }
 
 void Output_data(double roll, double pitch, double yaw)
@@ -110,8 +94,27 @@ void loop()
     end_time = millis();
     dt = (end_time - start_time)*0.001; 
   }
-  
+
+  // ================= Sensor Mega로부터 데이터 받는 부분 ======================
+  if (Serial1.available() <= 0) return;   // Serial1으로 들어온 값이 없으면 종료
+
+  char c = Serial1.read();
+  buff += c;
+
+  // STX ~ ETX 찾기
+  int ipos0 = buff.indexOf(cSTX);
+  if (ipos0 < 0) return;
+  int ipos1 = buff.indexOf(cETX, ipos0);
+  if (ipos1 < 0) return;
+
+  // STX ~ ETX 빼고 내부만 얻기
+  input_data = buff.substring(ipos0+1, ipos1);
+
+  // gBuff 업데이트
+  buff = buff.substring(ipos1 + 1);
+
   Input_data();
+  // ================= Sensor Mega로부터 데이터 받는 부분 ======================
   
   Compute_Complmentary(ax, ay, az, gx, gy, gz, dt);
   
@@ -125,7 +128,14 @@ void loop()
       Serial.print("|");
       Serial.print(gy);
       Serial.print("|");
-      Serial.println(gz);
+      Serial.print(gz);
+      Serial.print("|");
+      Serial.print(speedGPSx);
+      Serial.print("|");
+      Serial.print(speedGPSy);
+      Serial.print("|");
+      Serial.println(speedDP);
+      
   
   Output_data(roll_filter, pitch_filter, yaw_filter);
 }
