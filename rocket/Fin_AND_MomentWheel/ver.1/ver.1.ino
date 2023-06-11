@@ -56,34 +56,31 @@ double u_pitch = 0;
 double u_yaw = 0;
 
 
+
 const char cSTX = 2;
 const char cETX = 3;
 String buff;
-
 String input_data;
 
 void Input_data()
 {
- // gBuff 업데이트
+  int data_len = input_data.length();
+  String temp = "";
+  int cnt = 1;
 
-
- int data_len = input_data.length();
- String temp = "";
- int cnt = 1;
-
- for (int i = 0; i < data_len; i++)
- {
-   if (input_data[i] == ',')
-   {
-     if (cnt == 1) sensor_roll = temp.toDouble();
-     else if (cnt == 2) sensor_pitch = temp.toDouble();
-     else sensor_yaw = temp.toDouble();
+  for (int i = 0; i < data_len; i++)
+  {
+    if (input_data[i] == ',')
+    {
+      if (cnt == 1) sensor_roll = temp.toDouble();
+      else if (cnt == 2) sensor_pitch = temp.toDouble();
+      else sensor_yaw = temp.toDouble();
       
-     temp = "";
-     cnt++;
-   }
-   else temp += input_data[i];
- }
+      temp = "";
+      cnt++;
+    }
+    else temp += input_data[i];
+  }
 }
 
 
@@ -141,7 +138,7 @@ void control_SERVO()
 
 void setup()
 {
-  Serial.begin(9600);
+  Serial.begin(2400);
   Serial1.begin(2400);
   
   servo_pitch.attach(servopin_pitch);
@@ -170,7 +167,6 @@ void loop()
   }
   
   if (Serial1.available() <= 0) return;   // Serial1으로 들어온 값이 없으면 종료
-//Serial.println(input_data);
 
   char c = Serial1.read();
   buff += c;
@@ -184,14 +180,17 @@ void loop()
   // STX ~ ETX 빼고 내부만 얻기
   input_data = buff.substring(ipos0+1, ipos1);
   buff = buff.substring(ipos1 + 1);
+  
   Input_data();
 
-  Serial.println(sensor_roll);
+  Serial.print(sensor_roll);
+  Serial.print(" ");
+  Serial.print(sensor_pitch);
+  Serial.print(" ");
+  Serial.println(sensor_yaw);
   
 
 
-  
-  
 
 
   u_roll = computePD_BLDC(goal_roll, sensor_roll, past_roll, dt, Kp_r, Kd_r, 0);
