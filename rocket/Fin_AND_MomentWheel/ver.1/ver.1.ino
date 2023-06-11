@@ -55,10 +55,45 @@ double u_roll = 0;
 double u_pitch = 0;
 double u_yaw = 0;
 
+String buff;
+
+
  void Input_data()
  {
-  //read list = Serial.read; -> a12345b12345c123456
-  // 촵촵 짤라
+  if (Serial1.available() <= 0) return;   // Serial1으로 들어온 값이 없으면 종료
+
+  char c = Serial1.read();
+  buff += c;
+
+  // STX ~ ETX 찾기
+  int ipos0 = buff.indexOf(cSTX);
+  if (ipos0 < 0) return;
+  int ipos1 = buff.indexOf(cETX, ipos0);
+  if (ipos1 < 0) return;
+
+  // STX ~ ETX 빼고 내부만 얻기
+  String input_data = buff.substring(ipos0+1, ipos1);
+
+  // gBuff 업데이트
+  buff = buff.substring(ipos1 + 1);
+
+  int data_len = input_data.length();
+  String temp = "";
+  int cnt = 1;
+
+  for (int i = 0; i < data_len; i++)
+  {
+    if (input_data[i] == ',')
+    {
+      if (cnt == 1) sensor_roll = temp.toDouble();
+      else if (cnt == 2) sensor_pitch = temp.toDouble();
+      else sensor_yaw = temp.toDouble();
+      
+      temp = "";
+      cnt++;
+    }
+    else temp += input_data[i];
+  }
  }
 
 
@@ -143,16 +178,15 @@ void loop()
     end_time = millis();
     dt = (end_time - start_time)*0.001; 
   }
-  Serial.println(1000*dt);
 
 
   
   
   Input_data();
 
-  u_roll = computePD_BLDC(goal_roll, sensor_roll, past_roll, sampling_time, Kp_r, Kd_r, 0);
-  u_pitch = computePD_SERVO(goal_pitch, sensor_pitch, past_pitch, sampling_time, Kp_p, Kd_p);
-  u_yaw = computePD_SERVO(goal_yaw, sensor_yaw, past_yaw, sampling_time, Kp_y, Kd_y);
+  u_roll = computePD_BLDC(goal_roll, sensor_roll, past_roll, dt, Kp_r, Kd_r, 0);
+  u_pitch = computePD_SERVO(goal_pitch, sensor_pitch, past_pitch, dt, Kp_p, Kd_p);
+  u_yaw = computePD_SERVO(goal_yaw, sensor_yaw, past_yaw, dt, Kp_y, Kd_y);
 
   control_BLDC();
   control_SERVO();
