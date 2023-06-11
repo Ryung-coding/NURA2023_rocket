@@ -1,4 +1,4 @@
-/*
+  /*
  * mpu9250 I2C addr = 0x68
  * pca9685 I2c addr = 0x40
  * 
@@ -60,8 +60,29 @@ void Input_data()
   gx = Wire.read() << 8 | Wire.read();
   gy = Wire.read() << 8 | Wire.read();
   gz = Wire.read() << 8 | Wire.read();
+
   
-  gz = (double) gx * 250 / 32768; //change 16bit -> degree/s
+  
+  ax = (double) ax * 250 / 32768;
+  ay = (double) ay * 250 / 32768;
+  az = (double) az * 250 / 32768;
+  gx = (double) gx * 250 / 32768;
+  gy = (double) gy * 250 / 32768;
+  gz = (double) gz * 250 / 32768; //change 16bit -> degree/s
+
+  Serial.print(ax);
+  Serial.print(",");
+  Serial.print(ay);
+  Serial.print(",");
+  Serial.print(az);
+  Serial.print(",");
+
+  Serial.print(gx);
+  Serial.print(",");
+  Serial.print(gy);
+  Serial.print(",");
+  Serial.println(gz);
+  
 }
 
 float lowpassfilter(float filter, float data, float lowpass_constant)
@@ -112,7 +133,7 @@ void BLDC_setting(float duty)
     Serial.println(motor_speed_filter);
     pwm.setPWM(1,0,motor_speed_filter);
     motor_speed_past = motor_speed_filter;
-    delay(100);
+    delay(10);
     }while(abs(motor_speed - motor_speed_filter) > 3);
 }
 
@@ -120,7 +141,7 @@ void BLDC_setting(float duty)
 
 void setup() 
 {
-  Serial.begin(9600);
+  Serial.begin(115200);
   Wire.begin();
   pwm.begin();
   pwm.setPWMFreq(380); //->measurement 400hz -> 2.5ms / so pca9685 input unit mean 0.620us
@@ -149,9 +170,9 @@ void loop()
     r = 0;
     u = computePID(r, y, dt);                            //calculate PID
 
-//    Serial.print(map(set_duty, 0, 100, 1613, 3226) + y);
-//    Serial.print(",");
-//    Serial.println(u);
+    Serial.print(map(set_duty, 0, 100, 1613, 3226) + y);
+    Serial.print(",");
+    Serial.println(u);
     control_motor();                                     //control BLDC using 'u' factor
   
     y_past = y;                                          //up-date

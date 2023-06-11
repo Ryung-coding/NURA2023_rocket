@@ -23,7 +23,6 @@ int16_t ax, ay, az, gx, gy, gz; // we use only 'gz'(yaw angular velocity)
 //calibration Value
 #define bangbang_control_range 7        // Bang-Bang control range factor
 #define set_duty 20                     // setting zero angular velocity[%]
-#define range_duty 15                   // control duty range angular velocity[%]
 
 //PD gain
 #define Kp 1.5
@@ -77,7 +76,7 @@ float computePD(float r, float y, float dt)
   
   if ( abs(error) <= bangbang_control_range) u = 0;
   
-  u = constrain(map(set_duty, 0, 100, 1613, 3226) + u, map(set_duty - range_duty, 0, 100, 1613, 3226), map(set_duty + range_duty, 0, 100, 1613, 3226));
+  u = map(set_duty + u, 0, 100, 1613, 3226);
   u = error < 0 ? u : -u;            //define ccw = r < y case = u | cw = r > y case = -u
    
   return u; //[us]  
