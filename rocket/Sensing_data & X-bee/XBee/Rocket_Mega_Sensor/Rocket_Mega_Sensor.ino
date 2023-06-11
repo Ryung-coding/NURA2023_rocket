@@ -15,7 +15,7 @@
 #include <DHT.h>                // DHT22 라이브러리
 #include <TinyGPS.h>            // GPS 라이브러리
 #include <SD.h>                 // MicroSDCard 라이브러리
-#define LEN_OF_SENSOR_ARRAY 14  // 센서 값 배열의 길이
+#define LEN_OF_SENSOR_ARRAY 15  // 센서 값 배열의 길이
 
 // ===================== 센서 객체 선언 ====================
 Adafruit_BMP280 bmp;  // BMP280 객체
@@ -30,7 +30,7 @@ double sensorData[LEN_OF_SENSOR_ARRAY];     // 센서 값 배열
 double Pressure, Altitude;                  // 기압, 고도
 double Temperature, Humidity;               // 온도, 습도
 int16_t ax, ay, az, gx, gy, gz;             // 3축 가속도, 각속도
-float flat, flon, speedGPS, courseDegree;   // 위도, 경도, 속도, 각도
+float flat, flon, speedGPS, speedGPSx, speedGPSy, courseDegree;   // 위도, 경도, 속도, x축 속도, y축 속도, 각도
 unsigned long age;                          // GPS 정확도
 double speedDP;                             // 차압 센서 속도
 double prevPressure, prevAltitude;                             
@@ -51,8 +51,8 @@ double air = 1.1839;                        //공기밀도 kg/m3
 
 
 void setup() {
-  Serial.begin(2400);   
-  Serial2.begin(9600);  // Due와의 시리얼 통신
+  Serial.begin(2400);   // XBee Mega와의 Serial 통신
+  Serial2.begin(2400);  // Due와의 Serial 통신
   Wire.begin();   
   bmp.begin(0x76);
   dht.begin();
@@ -67,7 +67,7 @@ void setup() {
 }// Setup End
 
 
-
+ 
 void loop() {
 // Watchdog Timer 리셋
   wdt_reset();  
@@ -98,9 +98,11 @@ void loop() {
   gz = Wire.read() << 8 | Wire.read();  // Z축 자이로스코프 값 읽어오기
 
 // GPS 센서에서 위도, 경도, 속도, 각도 값 읽어오기
-  gps.f_get_position(&flat, &flon, &age);   // 위도, 경도, 정확도 얻음
-  speedGPS = gps.f_speed_mps();             // 속도 얻음
-  courseDegree = gps.f_course();            // 각도 얻음
+  gps.f_get_position(&flat, &flon, &age);               // 위도, 경도, 정확도 얻음
+  speedGPS = gps.f_speed_mps();                         // 속도 얻음
+  courseDegree = gps.f_course();                        // 각도 얻음
+  speedGPSx = speedGPS * sin(courseDegree * PI / 180);  // 속도와 각도로부터 x축 속도 얻어냄
+  speedGPSy = speedGPS * cos(courseDegree * PI / 180);  // 속도와 각도로부터 y축 속도 얻어냄
 
 // MPXV7002DP에서 속도 값 읽어오기
   float adc = 0;
@@ -121,11 +123,12 @@ void loop() {
 // 시리얼 통신으로 센서 값 배열 보내기, MicroSD에 입력하기
   if (sendData){
     Serial.print(char(cSTX));
+    Serial2.print(char(cSTX));
     
     for (int i = 0; i < LEN_OF_SENSOR_ARRAY; i++){
       
       // 데이터가 위도 혹은 경도이면 소수점 아래 6자리까지 전송
-      if (i == 8 || i == 9){                    
+      if (i == 9 || i == 10){                    
         Serial.print(sensorData[i], 6);
         myFile.print(sensorData[i], 6);
       }
@@ -140,12 +143,13 @@ void loop() {
     }
 
     // DUE에는 각,가속도, 속도 값만 전송
-    for(int i = 0; i < 8; i++){
+    for(int i = 0; i < 9; i++){
       Serial2.print(sensorData[i]);
       Serial2.print(',');
     }
     
     Serial.print(char(cETX));
+    Serial2.print(char(cETX));
     Serial.println();
     Serial2.println();
     myFile.println();
@@ -208,14 +212,15 @@ void putSensorDataIntoArray(){
   sensorData[3] = gx;
   sensorData[4] = gy;
   sensorData[5] = gz;
-  sensorData[6] = speedGPS;
-  sensorData[7] = speedDP;
-  sensorData[8] = flat;
-  sensorData[9] = flon;
-  sensorData[10] = Pressure;
-  sensorData[11] = Altitude;
-  sensorData[12] = Temperature;
-  sensorData[13] = Humidity;
+  sensorData[6] = speedGPSx;
+  sensorData[7] = speedGPSy;
+  sensorData[8] = speedDP;
+  sensorData[9] = flat;
+  sensorData[10] = flon;
+  sensorData[11] = Pressure;
+  sensorData[12] = Altitude;
+  sensorData[13] = Temperature;
+  sensorData[14] = Humidity;
 }
 
 
