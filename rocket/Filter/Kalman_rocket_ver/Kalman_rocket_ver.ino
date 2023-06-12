@@ -96,4 +96,6 @@ void loop()
       Serial.println(gz);
   
   Output_data(roll_filter, pitch_filter, yaw_filter);
+  
+  if (Thrust_start_time_is_measured == false) Measure_Thrust_start_time(Accel(2,0));  // New code line which measures Thrust_start_time
 }
