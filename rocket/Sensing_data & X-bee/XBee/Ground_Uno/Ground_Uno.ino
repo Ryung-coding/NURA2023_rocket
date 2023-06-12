@@ -2,7 +2,7 @@
 // 없음
 
 #include <SoftwareSerial.h> // 시리얼 통신 라이브러리
-#define LEN_OF_SENSOR_ARRAY 15 // 센서 값 배열의 길이
+#define LEN_OF_SENSOR_ARRAY 20 // 센서 값 배열의 길이
 #include <ArduinoJson.h>
 #include <ArduinoJson.hpp>
 StaticJsonDocument<500> doc;  // JSON 
@@ -39,51 +39,14 @@ void setup() {
   // 버퍼 업데이트
   Buff = Buff.substring(ipos1 + 1);
 
-  // 문자열 파싱
-  int currentIndex = 0; // sensorData 배열의 현재 인덱스
-  int delimiterIndex = st.indexOf('|'); // 첫 번째 구분자(,)의 인덱스
-  while (delimiterIndex >= 0) {
-    // 구분자 이전의 문자열을 추출하여 sensorData 배열에 저장
-    String data = st.substring(0, delimiterIndex);
-    sensorData[currentIndex] = data;
 
-    // 다음 구분자 이전의 문자열을 추출하기 위해 인덱스 업데이트
-    st = st.substring(delimiterIndex + 1);
-    delimiterIndex = st.indexOf('|');
-
-    currentIndex++;
-    if (currentIndex >= LEN_OF_SENSOR_ARRAY) {
-      // sensorData 배열의 크기를 초과하는 경우 루프를 종료
-      break;
-    }
-  }
-
-  // 센서 값을 초기화
-  for (int i = currentIndex; i < LEN_OF_SENSOR_ARRAY; i++) {   
-    sensorData[i] = "";
-  }
-   doc["roll"] = sensorData[0];    //ax값
-   doc["pitch"] = sensorData[1];   //ay값
-   doc["yaw"] = sensorData[2];     //az값
  
-    doc["airx"] = sensorData[6];   //gps의 x속도
-    doc["airy"] = sensorData[7];   //gps의 y속도
-    doc["airz"] =sensorData[8];   //차압센서 속도값
-    doc["x"] = sensorData[9];  // 위도값
-    doc["y"] = sensorData[10]; // 경도값
-    doc["at"] = sensorData[11]; // pressure값
-    doc["z"] = sensorData[12]; // 해발고도 
-    doc["t"] = sensorData[13]; // temperature값
-    doc["h"] = sensorData[14]; // humidity값
-  
-   // JSON 직렬화 후 출력
-    serializeJson(doc, Serial);
 
+
+   Serial.print(st);
   
    
    Serial.println();
-   
-
-   
+    
 
  }
