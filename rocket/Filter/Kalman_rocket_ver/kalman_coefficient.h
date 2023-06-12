@@ -99,5 +99,23 @@ void Output_data(double roll, double pitch, double yaw)
 }
 
 
+
+#define az_threshold 10000                    // az 임계값
+bool Thrust_start_time_is_measured = false;   // Thrust_start_time이 측정되었음을 나타내는 bool 변수.
+#define Thrust_start_time_count 3             // az가 임계값을 넘은 횟수 정의값
+int cnt = 0;                                  // az가 임계값을 넘은 횟수를 나타내는 변수 
+double Thrust_start_time = -1.6958;                 // Thrust_start_time
+
+void Measure_Thrust_start_time(double az)
+{
+  if (az >= az_threshold) cnt++;
+  if (cnt >= Thrust_start_time_count)
+  {
+    Thrust_start_time = millis();
+    Thrust_start_time_is_measured = true;
+  }
+}
+
+
 //##############################################################################################################//
 #endif
