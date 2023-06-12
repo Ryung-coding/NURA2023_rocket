@@ -138,8 +138,9 @@ void loop() {
         Serial.print(sensorData[i]);
         myFile.print(sensorData[i]);
       }
-      Serial.print(',');
-      myFile.print(',');
+      Serial.print('|');
+     
+      myFile.print(',,');
     }
 
     // DUE에는 각,가속도, 속도 값만 전송
