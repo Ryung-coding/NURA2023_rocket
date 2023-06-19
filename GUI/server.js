@@ -1,12 +1,12 @@
 const { SerialPort } = require('serialport')
 const { ReadlineParser } = require('@serialport/parser-readline')
-const port = new SerialPort({ path: 'COM6', baudRate: 9600 })
+const port = new SerialPort({ path: 'COM6', baudRate: 2400 }) //9600원래 6번
 const parser = new ReadlineParser()
 port.pipe(parser)
 
 
 const express = require('express');
-const app = express();
+const app = express()
 const http = require('http');
 const server = http.createServer(app);
 const { Server } = require("socket.io");
@@ -86,7 +86,7 @@ io.on('connection', (socket) => {
 
 	socket.emit('result', `${socket.id}로 연결 되었습니다.`);
 	parser.on('data', function(data) {
-			console.log(data);
+			//console.log(data);
 			//data를 가공
 			//여기부터
 			// var spawn = require('child_process').spawn;

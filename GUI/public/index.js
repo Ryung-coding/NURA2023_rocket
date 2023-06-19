@@ -1,11 +1,15 @@
 var socket = io();
-var obj;
+
+var raw_obj;
 var modify_obj;
 
 var points = [];
 var airFlowData = [];
 var line = null;
 const THREE = window.THREE;
+var origin_lonlat = [127.07755612, 37.63300324]; //[127.207996, 34.610]; 고흥쪽 좌표
+var altitude_diff = 125;
+let frameCounter = 0;
 
 
 var lx = document.getElementById('lx');
@@ -56,11 +60,22 @@ svg.append("defs").append("clipPath")
 svg.append("g")
     .attr("class", "x axis")
     .attr("transform", "translate(0," + yScale(0) + ")")
-    .call(d3.svg.axis().scale(xScale).orient("bottom"));
+    .call(d3.svg.axis().scale(xScale).orient("bottom"))
+    .append("text") // x축 이름 추가
+    .attr("class", "axis-label")
+    .attr("x", width/1.15)
+    .attr("y", 30)
+    .text("(1/10 Second)");
 
 svg.append("g")
     .attr("class", "y axis")
-    .call(d3.svg.axis().scale(yScale).orient("left"));
+    .call(d3.svg.axis().scale(yScale).orient("left"))
+    .append("text") // y축 이름 추가
+    .attr("class", "axis-label")
+    .attr("transform", "rotate(-90)")
+    .attr("x", -height / 1.8)
+    .attr("y", -30)
+    .text("(meter)");
 
 var path = svg.append("g")
     .attr("clip-path", "url(#clip)")
@@ -101,11 +116,22 @@ svg1.append("defs").append("clipPath")
 svg1.append("g")
     .attr("class", "x axis")
     .attr("transform", "translate(0," + yScale(0) + ")")
-    .call(d3.svg.axis().scale(xScale1).orient("bottom"));
+    .call(d3.svg.axis().scale(xScale1).orient("bottom"))
+    .append("text") // x축 이름 추가
+    .attr("class", "axis-label")
+    .attr("x", width/1.15)
+    .attr("y", 30)
+    .text("(1/10 Second)");
 
 svg1.append("g")
     .attr("class", "y axis")
-    .call(d3.svg.axis().scale(yScale1).orient("left"));
+    .call(d3.svg.axis().scale(yScale1).orient("left"))
+    .append("text") // y축 이름 추가
+    .attr("class", "axis-label")
+    .attr("transform", "rotate(-90)")
+    .attr("x", -height / 1.8)
+    .attr("y", -30)
+    .text("(meter)");
 
 var path1 = svg1.append("g")
     .attr("clip-path", "url(#clip1)")
@@ -146,11 +172,22 @@ svg2.append("defs").append("clipPath")
 svg2.append("g")
     .attr("class", "x axis")
     .attr("transform", "translate(0," + yScale(0) + ")")
-    .call(d3.svg.axis().scale(xScale2).orient("bottom"));
+    .call(d3.svg.axis().scale(xScale2).orient("bottom"))
+    .append("text") // x축 이름 추가
+    .attr("class", "axis-label")
+    .attr("x", width/1.15)
+    .attr("y", 30)
+    .text("(1/10 Second)");
 
 svg2.append("g")
     .attr("class", "y axis")
-    .call(d3.svg.axis().scale(yScale2).orient("left"));
+    .call(d3.svg.axis().scale(yScale2).orient("left"))
+    .append("text") // y축 이름 추가
+    .attr("class", "axis-label")
+    .attr("transform", "rotate(-90)")
+    .attr("x", -height / 1.8)
+    .attr("y", -30)
+    .text("(meter)");
 
 var path2 = svg2.append("g")
     .attr("clip-path", "url(#clip2)")
@@ -220,15 +257,28 @@ form.addEventListener('submit', function(e) {
  });
  //points.push(new THREE.Vector3(0,0,0));
  socket.on('data', (msg) => {
-  //console.log(msg);
-  obj = JSON.parse(msg);
-  //modify_obj = {x: obj.x, y: obj.y, z: obj.z, u: obj.airx, v: obj.airy, w: obj.airz};
-  console.log(obj);
+  raw_obj = msg.split('|') 
+  modify_obj = {
+    x: Math.round(111220*(raw_obj[9] - origin_lonlat[1])),
+    y: Math.round(91560*(raw_obj[10] - origin_lonlat[0])), 
+    z: Math.round(raw_obj[12]) - altitude_diff,
+    u: (111220*(raw_obj[9] - origin_lonlat[1])) + raw_obj[6], 
+    v: (91560*(raw_obj[10] - origin_lonlat[0])) + raw_obj[7], 
+    w: raw_obj[12] + Math.sqrt(raw_obj[8] * raw_obj[8] - raw_obj[6] * raw_obj[6] - raw_obj[7] * raw_obj[7]), 
+    roll : Math.atan(raw_obj[0] / Math.sqrt(raw_obj[2]*raw_obj[2] + raw_obj[1]*raw_obj[1])),
+    pitch : Math.atan(raw_obj[2] / Math.sqrt(raw_obj[0]*raw_obj[0] + raw_obj[1]*raw_obj[1])),
+    yaw : Math.atan(Math.sqrt(raw_obj[0]*raw_obj[0] + raw_obj[2]*raw_obj[2]) / (-raw_obj[1]) ), 
+    t : raw_obj[13], 
+    h : raw_obj[14], 
+    at : raw_obj[11] 
+  };
+  //console.log(obj);
 
 
 
-  points.push(new THREE.Vector3(obj.x, obj.z, obj.y));
-  airFlowData.push({x: obj.x, y: obj.y, z: obj.z, u: obj.airx, v: obj.airy, w: obj.airz});
+  points.push(new THREE.Vector3(modify_obj['y'], modify_obj['z'], -modify_obj['x']));
+  airFlowData.push({x: -modify_obj['x'], y: modify_obj['y'], z: modify_obj['z'], u: modify_obj['u'], v: modify_obj['v'], w: modify_obj['w']});
+  console.log(modify_obj);
   // line 객체가 생성되어 있지 않으면 생성합니다.
   if (!line) {
     const material1 = new THREE.LineBasicMaterial({ color: 0x0000ff });
@@ -245,17 +295,17 @@ form.addEventListener('submit', function(e) {
   }
 
   // 기존의 코드에서 points 배열을 사용하는 부분을 모두 제거합니다.
-  lx.innerText = obj.x;
-  ly.innerText = obj.y;
-  lz.innerText = obj.z;
-  pitch.innerText = obj.pitch;
-  yaw.innerText = obj.yaw;
-  roll.innerText = obj.roll;
-  ex.innerText = obj.ex;
-  ey.innerText = obj.ey;
-  t.innerText = obj.t;
-  h.innerText = obj.h;
-  at.innerText = obj.at;
+  lx.innerText = raw_obj[9];
+  ly.innerText = raw_obj[10];
+  lz.innerText = Math.round(modify_obj['z']);
+  pitch.innerText = modify_obj['pitch'];
+  yaw.innerText = modify_obj['yaw'];
+  roll.innerText = modify_obj['roll'];
+  ex.innerText = 200;
+  ey.innerText = 200;
+  t.innerText = Number(modify_obj['t']);
+  h.innerText = Number(modify_obj['h']);
+  at.innerText = Number(modify_obj['at']);
  // console.log(airFlowData); // airFlowData를 콘솔에 출력
 });
 
@@ -265,13 +315,13 @@ container: 'map',
 // Choose from Mapbox's core styles, or make your own style with Mapbox Studio
 style: 'mapbox://styles/mapbox/satellite-streets-v11',//light-v11
 zoom: 17,
-center: [127.20799627897934, 34.610],
+center: [origin_lonlat[0], origin_lonlat[1]],//시선 좌표
 pitch: 60,
 antialias: true // create the gl context with MSAA antialiasing, so custom layers are antialiased
 });
 
 // parameters to ensure the model is georeferenced correctly on the map
-modelOrigin = [127.20799627897930, 34.610]; //현장에서 바꿈
+modelOrigin = [origin_lonlat[0], origin_lonlat[1]];
 modelAltitude = 0;
 modelRotate = [Math.PI / 2, 0, 0];
 
@@ -321,8 +371,7 @@ var geometry1;
  geometry1 = new THREE.BufferGeometry().setFromPoints( points );
          line = new THREE.Line( geometry1, material1 );
 
-//const geometry1 = new THREE.BufferGeometry().setFromPoints( points );
-//const line = new THREE.Line( geometry1, material1 );
+
 //낙하지점
 
 
@@ -349,18 +398,18 @@ function animate(){
   requestAnimationFrame(animate) //1초에 60번 실행됨.
 
   //회전
-  gltf.scene.position.z = Number(obj.x); 
-  gltf.scene.position.x = Number(obj.y);
-  gltf.scene.position.y = Number(obj.z); //높이
-  gltf.scene.rotation.z = Number(obj.pitch);
-  gltf.scene.rotation.y = Number(obj.yaw);
-  gltf.scene.rotation.x = Number(obj.roll);
+  gltf.scene.position.z = -Number(modify_obj['x']); 
+  gltf.scene.position.x = Number(modify_obj['y']); //xy 바꿔봄
+  gltf.scene.position.y = Number(modify_obj['z']); //높이
+  gltf.scene.rotation.z = Number(modify_obj['pitch']);
+  gltf.scene.rotation.y = Number(modify_obj['yaw']);
+  gltf.scene.rotation.x = Number(modify_obj['roll']);
   cube.rotation.y += 0.08;
-  cube.position.z = Number(obj.ex);
-  cube.position.x = Number(obj.ey);
+  cube.position.z = 200; //예상 낙하지점
+  cube.position.x = 200;
 
   //그래프1 시작
-  var newData = { x: count-2000, y: obj.x };
+  var newData = { x: count-2000, y: modify_obj['x'] };
   data.push(newData);
   
   // redraw the line
@@ -368,7 +417,7 @@ function animate(){
     .attr("d", lineGenerator);
   
   // shift x axis to the left
-  xScale.domain([count-4000, count-2000]);
+  xScale.domain([count-2400, count-2000]);
   svg.select(".x.axis")
     .transition()
     .duration(50)
@@ -379,11 +428,10 @@ function animate(){
   if (data.length > 2000) {
     data.shift();
   }
-  // increment count
-  count++;
+  
   //그래프1 끝
   //그래프2 시작
-  var newData1 = { x: count1-2000, y: obj.y };
+  var newData1 = { x: count1-2000, y: modify_obj['y'] };
   data1.push(newData1);
  
   
@@ -392,7 +440,7 @@ function animate(){
     .attr("d", lineGenerator1);
   
   // shift x axis to the left
-  xScale1.domain([count1-4000, count1-2000]);
+  xScale1.domain([count1-2400, count1-2000]);
   svg1.select(".x.axis")
     .transition()
     .duration(50)
@@ -403,11 +451,10 @@ function animate(){
   if (data1.length > 2000) {
     data1.shift();
   }
-  // increment count
-  count1++;
+
   //그래프2 끝
   //그래프3 시작
-  var newData2 = { x: count2-2000, y: obj.z };
+  var newData2 = { x: count2-2000, y: modify_obj['z']};
   data2.push(newData2);
  
   
@@ -416,7 +463,7 @@ function animate(){
     .attr("d", lineGenerator2);
   
   // shift x axis to the left
-  xScale2.domain([count2-4000, count2-2000]);
+  xScale2.domain([count2-2400, count2-2000]);
   svg2.select(".x.axis")
     .transition()
     .duration(50)
@@ -428,8 +475,11 @@ function animate(){
     data2.shift();
   }
   // increment count
-  count2++;
-  //그래프3 끝
+  if (frameCounter++ % 4 === 0){
+    count++;
+    count1++;
+    count2++;
+  }
   
  
   renderer1.render(scene1, camera1);
@@ -466,9 +516,6 @@ setInterval(airflowdraw, 1000);
 //}
 );
 
-//geometry1 = new THREE.BufferGeometry().setFromPoints( points );
-//line = new THREE.Line( geometry1, material1 );
-//this.scene.add( line );
 this.map = map;
 
 // use the Mapbox GL JS map canvas for three.js
@@ -568,28 +615,3 @@ map.addLayer(
 labelLayerId
 );
 });
-
-//여기부터 air flow log
-
-
-
-		// // 측정 지점의 수
-		// var numPoints = 200;
-
-		// // 측정 지점 생성
-		// for (var i = 0; i < numPoints; i++) {
-		// 	var x = Math.random() * 100 - 50;  // x 좌표
-		// 	var y = Math.random() * 100 - 50;  // y 좌표
-		// 	var z = Math.random() * 100 - 50;  // z 좌표
-
-		// 	// 공기 흐름 속도 계산
-		// 	var u = Math.random() * 20 - 5;    // x 방향 속도
-		// 	var v = Math.random() * 20 - 5;    // y 방향 속도
-		// 	var w = Math.random() * 20 - 5;    // z 방향 속도
-
-		// 	// 측정 지점 정보 저장
-		// 	airFlowData.push({x: x, y: y, z: z, u: u, v: v, w: w});
-		// }
-
-
-     
