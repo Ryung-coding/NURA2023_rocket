@@ -181,9 +181,9 @@ void setup()
   {
     for(int j=0; j<5; j++)
     {
-      H(i,j) = 0
-      Q(i,j) = 0
-      R(i,j) = 0
+      H(i,j) = 0;
+      Q(i,j) = 0;
+      R(i,j) = 0;
       
       P = 0;
       P_past =0;
