@@ -22,6 +22,7 @@ Adafruit_BMP280 bmp;  // BMP280 객체
 DHT dht(2, DHT22);    // DHT22 객체
 TinyGPS gps;          // GPS 객체
 File myFile;          // MicroSDCard 객체
+File GPSFile;         // GPS SDCard 객체
 
 
 // ================= 센서 값 배열, 변수 선언 ================
@@ -51,14 +52,15 @@ double air = 1.1839;                        //공기밀도 kg/m3
 
 
 void setup() {
-  Serial.begin(2400);   // XBee Mega와의 Serial 통신
-  Serial2.begin(2400);  // Due와의 Serial 통신
+  pinMode(LED_BUILTIN, OUTPUT);   // Arduino Mega Pro의 Built-In LED(SDCard 작동 확인용)
+  Serial.begin(2400);             // XBee Mega와의 Serial 통신
+  Serial2.begin(2400);            // Due와의 Serial 통신
   Wire.begin();   
   bmp.begin(0x76);
   dht.begin();
-  Serial1.begin(9600);  // GPS 보드레이트는 9600으로 고정
+  Serial1.begin(9600);            // GPS 보드레이트는 9600으로 고정
   initializeMicroSD();
-  wdt_enable(WDTO_1S);  // Watchdog Timer 1초
+  wdt_enable(WDTO_1S);            // Watchdog Timer 1초
   sendData = true;
   
   for(int i = 0; i < 10; i++){
@@ -74,6 +76,7 @@ void loop() {
 
 // MicroSD txt파일 열기
   myFile = SD.open("value.txt", FILE_WRITE);
+  GPSFile = SD.open("GPS.txt", FILE_WRITE);
 
 // BMP280에서 기압, 고도 값 읽어오기
   Pressure = bmp.readPressure()/1000;
@@ -124,6 +127,7 @@ void loop() {
   if (sendData){
     Serial.print(char(cSTX));
     Serial2.print(char(cSTX));
+
     
     for (int i = 0; i < LEN_OF_SENSOR_ARRAY; i++){
       
@@ -139,9 +143,16 @@ void loop() {
         myFile.print(sensorData[i]);
       }
       Serial.print('|');
-     
-      myFile.print(',,');
+      myFile.print('|');
     }
+
+    // GPS SDCard에 위도, 경도 값 작성
+    GPSFile.print("{latlng: new kakao.maps.LatLng(");
+    GPSFile.print(sensorData[9], 6);
+    GPSFile.print(", ");
+    GPSFile.print(sensorData[10], 6);
+    GPSFile.println(")},");    
+    GPSFile.close();
 
     // DUE에는 각,가속도, 속도 값만 전송
     for(int i = 0; i < 9; i++){
@@ -243,6 +254,10 @@ void initializeMicroSD(){
   // Mega 기준 MISO 50, MOSI 51, SCK 52, SC 53
   if (!SD.begin(53)) { // SD카드 모듈을 초기화합니다, 매개변수에 SC 핀 번호 입력
     Serial.println("initialization failed!"); // SD카드 모듈 초기화에 실패하면 에러를 출력합니다.
+    digitalWrite(LED_BUILTIN,LOW);
   }
-  Serial.println("initialization done.");
+  else{
+    Serial.println("initialization done.");
+    digitalWrite(LED_BUILTIN,HIGH);
+  }
 }
