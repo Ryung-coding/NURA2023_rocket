@@ -125,11 +125,11 @@
       <span id="lx" class="data"></span>,
       <span id="lz" class="data"></span>)
     </p>
-    <p> 현재 기울기(
+    <!-- <p> 현재 기울기(
       <span id="pitch" class="data"></span>,
       <span id="yaw" class="data"></span>,
       <span id="roll" class="data"></span>)
-    </p>
+    </p> -->
     <p>예상낙하지점 좌표(
       <span id="ex" class="data"></span>,
       <span id="ey" class="data"></span>)</p> </div>
@@ -173,13 +173,16 @@
      
     </div>
     <div style="
-    width : 100%; height : 52%;
+    width : 100%; height : 56%;
     
-    float: left; border: 1px solid red;
+    float: left; /*border: 1px solid red;*/
+    position: relative;
     ">
-      
-      <img src="Skew-T-color-blank.svg" style="width : 520px;">
-      
+      <div id="skewt-logp" style="position: absolute; z-index: 2;">
+        
+      </div>
+      <img src="Skew-T-color-blank.svg" style=
+        "width : 520px; position: absolute; opacity: 1; z-index: 1;">
     </div>
    <!--<div id="messages" style="width :20.5vw; height : 100px; background-color: rgb(247, 234, 255);">
     

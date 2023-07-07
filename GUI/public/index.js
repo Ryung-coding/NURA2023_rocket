@@ -8,16 +8,16 @@ var airFlowData = [];
 var line = null;
 const THREE = window.THREE;
 var origin_lonlat = [127.07755612, 37.63300324]; //[127.207996, 34.610]; 고흥쪽 좌표
-var altitude_diff = 125;
+var altitude_diff = 125; //고도차이
 let frameCounter = 0;
 
 
 var lx = document.getElementById('lx');
 var ly = document.getElementById('ly');
 var lz = document.getElementById('lz');
-var pitch = document.getElementById('pitch');
-var yaw = document.getElementById('yaw');
-var roll = document.getElementById('roll');
+// var pitch = document.getElementById('pitch');
+// var yaw = document.getElementById('yaw');
+// var roll = document.getElementById('roll');
 var ex = document.getElementById('ex');
 var ey = document.getElementById('ey');
 var t = document.getElementById('t');
@@ -143,14 +143,14 @@ var count2 = 2000,
     data2 = [],
     margin2 = {top: 10, right: 10, bottom: 10, left: 40},
     width2 = 400, //- margin.left - margin.right,
-    height2 = 180; //- margin.top - margin.bottom;
+    height2 = 202; //- margin.top - margin.bottom;
 
 var xScale2 = d3.scale.linear()
     .domain([count2-2000, count2])
     .range([0, width2]);
 
 var yScale2 = d3.scale.linear()
-    .domain([-400, 400])
+    .domain([-50, 400])
     .range([height2, 0]);
 
 var lineGenerator2 = d3.svg.line()
@@ -171,7 +171,7 @@ svg2.append("defs").append("clipPath")
 
 svg2.append("g")
     .attr("class", "x axis")
-    .attr("transform", "translate(0," + yScale(0) + ")")
+    .attr("transform", "translate(0," + yScale(-400) + ")")
     .call(d3.svg.axis().scale(xScale2).orient("bottom"))
     .append("text") // x축 이름 추가
     .attr("class", "axis-label")
@@ -195,11 +195,68 @@ var path2 = svg2.append("g")
     .attr("class", "line");
 //그래프3 끝
 
+//skew-p log-p 시작
+var count3 = 3000,
+    data3 = [],
+    margin3 = {top: 8, right: 10, bottom: 10, left: 30},
+    width3 = 465, //- margin.left - margin.right,
+    height3 = 365; //- margin.top - margin.bottom;
+
+var xScale3 = d3.scale.linear()
+    .domain([-52, 47.5])
+    .range([0, width3]);
+
+var yScale3 = d3.scale.linear()
+    .domain([3.019, 2])
+    .range([height3, 0]);
+
+var lineGenerator3 = d3.svg.line()
+    .x(function(d, i) { return xScale3(d.x); })
+    .y(function(d, i) { return yScale3(d.y); });
+
+    var svg3 = d3.select("#skewt-logp").append("svg")
+    .attr("width", width3 + margin3.left + margin3.right)
+    .attr("height", height3 + margin3.top + margin3.bottom)
+  .append("g")
+    .attr("transform", "translate(" + margin3.left + "," + margin3.top + ")");
+
+svg3.append("defs").append("clipPath")
+    .attr("id", "clip3")
+  .append("rect")
+    .attr("width", width3)
+    .attr("height", height3);
+
+// svg3.append("g")
+//     .attr("class", "x axis")
+//     .attr("transform", "translate(0," + yScale3(3) + ")")
+//     .call(d3.svg.axis().scale(xScale3).orient("bottom"))
+//     .append("text") // x축 이름 추가
+//     .attr("class", "axis-label")
+//     .attr("x", width3/1.15)
+//     .attr("y", 30)
+//     .text("T");
+
+// svg3.append("g")
+//     .attr("class", "y axis")
+//     .call(d3.svg.axis().scale(yScale3).orient("left"))
+//     .append("text") // y축 이름 추가
+//     .attr("class", "axis-label")
+//     .attr("transform", "rotate(-90)")
+//     .attr("x", -height3 / 1.8)
+//     .attr("y", -30)
+//     .text("log P");
+
+var path3 = svg3.append("g")
+    .attr("clip-path", "url(#clip3)")
+  .append("path")
+    .attr("class", "line");
+//skew-t log-p 끝
+
 //air flow log 시작
 var scene1 = new THREE.Scene();
 var camera1 = new THREE.PerspectiveCamera( 75, 1.7/*window.innerWidth / window.innerHeight*/, 0.1, 1000 );
 var renderer1 = new THREE.WebGLRenderer();
-renderer1.setSize( 520,300);//window.innerWidth, window.innerHeight );
+renderer1.setSize( 520,window.innerHeight*0.4);//window.innerWidth, window.innerHeight );
 document.getElementById('airflow').appendChild(renderer1.domElement); // 변경된 부분: 그래프를 airflow div에 추가
 
 var controls1 = new THREE.OrbitControls( camera1, renderer1.domElement );
@@ -247,6 +304,8 @@ scene1.add(cube);
 }
 //air flow log 끝
 
+
+
 form.addEventListener('submit', function(e) {
   e.preventDefault();
   if (input.value) {
@@ -262,9 +321,9 @@ form.addEventListener('submit', function(e) {
     x: Math.round(111220*(raw_obj[9] - origin_lonlat[1])),
     y: Math.round(91560*(raw_obj[10] - origin_lonlat[0])), 
     z: Math.round(raw_obj[12]) - altitude_diff,
-    u: (111220*(raw_obj[9] - origin_lonlat[1])) + raw_obj[6], 
-    v: (91560*(raw_obj[10] - origin_lonlat[0])) + raw_obj[7], 
-    w: raw_obj[12] + Math.sqrt(raw_obj[8] * raw_obj[8] - raw_obj[6] * raw_obj[6] - raw_obj[7] * raw_obj[7]), 
+    u: Math.round((111220*(raw_obj[9] - origin_lonlat[1])) + raw_obj[6]), 
+    v: Math.round((91560*(raw_obj[10] - origin_lonlat[0])) + raw_obj[7]), 
+    w: Math.round(Math.round(raw_obj[12]) - altitude_diff + Math.sqrt(raw_obj[8] * raw_obj[8] - raw_obj[6] * raw_obj[6] - raw_obj[7] * raw_obj[7])), 
     roll : Math.atan(raw_obj[0] / Math.sqrt(raw_obj[2]*raw_obj[2] + raw_obj[1]*raw_obj[1])),
     pitch : Math.atan(raw_obj[2] / Math.sqrt(raw_obj[0]*raw_obj[0] + raw_obj[1]*raw_obj[1])),
     yaw : Math.atan(Math.sqrt(raw_obj[0]*raw_obj[0] + raw_obj[2]*raw_obj[2]) / (-raw_obj[1]) ), 
@@ -272,13 +331,20 @@ form.addEventListener('submit', function(e) {
     h : raw_obj[14], 
     at : raw_obj[11] 
   };
-  //console.log(obj);
+  
 
 
 
   points.push(new THREE.Vector3(modify_obj['y'], modify_obj['z'], -modify_obj['x']));
   airFlowData.push({x: -modify_obj['x'], y: modify_obj['y'], z: modify_obj['z'], u: modify_obj['u'], v: modify_obj['v'], w: modify_obj['w']});
-  console.log(modify_obj);
+    // pop the old data point off the front
+    if (points.length > 2000) {
+      points.shift();
+    }
+    if (airFlowData.length > 2000) {
+      airFlowData.shift();
+    }
+  //console.log(modify_obj);
   // line 객체가 생성되어 있지 않으면 생성합니다.
   if (!line) {
     const material1 = new THREE.LineBasicMaterial({ color: 0x0000ff });
@@ -298,15 +364,18 @@ form.addEventListener('submit', function(e) {
   lx.innerText = raw_obj[9];
   ly.innerText = raw_obj[10];
   lz.innerText = Math.round(modify_obj['z']);
-  pitch.innerText = modify_obj['pitch'];
-  yaw.innerText = modify_obj['yaw'];
-  roll.innerText = modify_obj['roll'];
+  // pitch.innerText = modify_obj['pitch'];
+  // yaw.innerText = modify_obj['yaw'];
+  // roll.innerText = modify_obj['roll'];
   ex.innerText = 200;
   ey.innerText = 200;
   t.innerText = Number(modify_obj['t']);
   h.innerText = Number(modify_obj['h']);
   at.innerText = Number(modify_obj['at']);
  // console.log(airFlowData); // airFlowData를 콘솔에 출력
+
+ 
+
 });
 
 mapboxgl.accessToken = 'pk.eyJ1IjoidGFleW91IiwiYSI6ImNsZHY2ajVkejA4MGszdm5vaWpvdG41Nm0ifQ.05ZauoKkriS9v4sp6ozTAA';
@@ -408,6 +477,37 @@ function animate(){
   cube.position.z = 200; //예상 낙하지점
   cube.position.x = 200;
 
+  
+//skewt logp
+  var newData3 = { x: modify_obj['t'], y: Math.log(modify_obj['at'])/Math.log(10) };
+ 
+  data3.push(newData3);
+  // redraw the line
+  path3.datum(data3)
+    .attr("d", lineGenerator3);
+   // console.log(data3);
+  // shift x axis to the left
+ // xScale3.domain([count3-2400, count3-2000]);
+  svg3.select(".x.axis")
+    .transition()
+    .duration(50)
+    .ease("linear")
+    .call(d3.svg.axis().scale(xScale3).orient("bottom"));
+  
+
+
+
+ 
+  renderer1.render(scene1, camera1);
+
+  
+
+}
+animate();
+
+
+function graph_time(){
+  
   //그래프1 시작
   var newData = { x: count-2000, y: modify_obj['x'] };
   data.push(newData);
@@ -432,6 +532,7 @@ function animate(){
   //그래프1 끝
   //그래프2 시작
   var newData1 = { x: count1-2000, y: modify_obj['y'] };
+ 
   data1.push(newData1);
  
   
@@ -474,21 +575,16 @@ function animate(){
   if (data2.length > 2000) {
     data2.shift();
   }
+
   // increment count
-  if (frameCounter++ % 4 === 0){
+  //if (frameCounter++ % 3 === 0){
     count++;
     count1++;
     count2++;
-  }
-  
- 
-  renderer1.render(scene1, camera1);
-
-  
-
+    count3++;
+  //}
 }
-animate();
-
+setInterval(graph_time, 100);
 
 var material1 = new THREE.MeshBasicMaterial({ color: 0xffff00 });
 
