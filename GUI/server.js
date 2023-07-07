@@ -12,71 +12,15 @@ const server = http.createServer(app);
 const { Server } = require("socket.io");
 const io = new Server(server);
 var fs = require('fs')
+var RecordTF = 0;
 
 app.use(express.static('public'));
 app.get('/', (req, res) => {
 	res.sendFile(__dirname + "/public/index.html"); // html 문서를 지정
 });
 
-// app.get('/sci-fi_rocket/scene.gltf', function(req, res) {
-// 	fs.readFile('./public/sci-fi_rocket/scene.gltf', function(error, data1) {
-// 	  if (error) {
-// 		res.writeHead(500, {'Content-Type': 'text/plain'});
-// 		res.end('Error loading GLTF file');
-// 		return;
-// 	  }
-  
-// 	  fs.readFile('./public/sci-fi_rocket/scene.bin', function(error, data2) {
-// 		if (error) {
-// 		  res.writeHead(500, {'Content-Type': 'text/plain'});
-// 		  res.end('Error loading BIN file');
-// 		  return;
-// 		}
-  
-// 		fs.readFile('./public/sci-fi_rocket/textures/UVMap_baseColor.png', function(error, data3) {
-// 		  if (error) {
-// 			res.writeHead(500, {'Content-Type': 'text/plain'});
-// 			res.end('Error loading PNG file');
-// 			return;
-// 		  }
-  
-// 		  fs.readFile('./public/sci-fi_rocket/textures/UVMap_metallicRoughness.png', function(error, data4) {
-// 			if (error) {
-// 			  res.writeHead(500, {'Content-Type': 'text/plain'});
-// 			  res.end('Error loading PNG file');
-// 			  return;
-// 			}
-  
-// 			fs.readFile('./public/sci-fi_rocket/textures/UVMap_normal.png', function(error, data5) {
-// 			  if (error) {
-// 				res.writeHead(500, {'Content-Type': 'text/plain'});
-// 				res.end('Error loading PNG file');
-// 				return;
-// 			  }
-  
-// 			  res.writeHead(200, {'Content-Type': 'model/gltf'});
-// 			  res.write(Buffer.concat([data1, data2, data3, data4, data5]));
-// 			  res.end();
-// 			});
-// 		  });
-// 		});
-// 	  });
-// 	});
-//   });
 
 
-app.get('/image1', function(req, res) {
-	fs.readFile('./public/image1.jpg', function(error, data) {
-		res.writeHead(200, {'Context-Type' : 'text/html'});
-		res.end(data);
-	});
-});
-app.get('/image2', function(req, res) {
-	fs.readFile('./public/image2.jpg', function(error, data) {
-		res.writeHead(200, {'Context-Type' : 'text/html'});
-		res.end(data);
-	});
-});
 //소켓 연결시
 io.on('connection', (socket) => {
 	console.log('a user connected');
@@ -103,6 +47,12 @@ io.on('connection', (socket) => {
 			// });
 			//여기까지 파이썬 실행코드
 			//소켓 발신
+			if(RecordTF == 1){
+			fs.appendFile('data.txt', data + '\n', function(err) {
+				if (err) throw err;
+				console.log('Data saved!');
+			  });
+			}
 			socket.emit('data', data);
 	});
 
@@ -110,6 +60,12 @@ io.on('connection', (socket) => {
 	socket.on('message', (msg) => { //받고
 		console.log("클라이언트의 요청이 있습니다.");
 		console.log(msg);
+		if(msg === 'record'){
+			RecordTF = 1;
+		}
+		else if(msg === 'stop'){
+			RecordTF = 0;
+		}
 		socket.emit('result', `수신된 메세지는 "${ msg }" 입니다.`);
 	});
 });
