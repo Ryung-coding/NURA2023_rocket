@@ -5,6 +5,7 @@ var modify_obj;
 
 var points = [];
 var airFlowData = [];
+var expectaion_fall = [0, 0];
 var line = null;
 const THREE = window.THREE;
 var origin_lonlat = [127.07755612, 37.63300324]; //[127.207996, 34.610]; 고흥쪽 좌표
@@ -19,8 +20,8 @@ var lz = document.getElementById('lz');
 // var pitch = document.getElementById('pitch');
 // var yaw = document.getElementById('yaw');
 // var roll = document.getElementById('roll');
-//var ex = document.getElementById('ex');
-//var ey = document.getElementById('ey');
+var ex = document.getElementById('ex');
+var ey = document.getElementById('ey');
 var t = document.getElementById('t');
 var h = document.getElementById('h');
 var at = document.getElementById('at');
@@ -393,6 +394,9 @@ form.addEventListener('submit', function(e) {
     fuel_timer = 100;
     step_now = 1;
     step();
+    expectaion_fall = [0,0];
+    ex.innerText = ' ';
+    ey.innerText = ' ';
   }
   if(msg==='2')
   flag1 = 1;
@@ -452,6 +456,23 @@ form.addEventListener('submit', function(e) {
     step();
   }
   }
+  
+  //낙하 시간
+  //(2*airFlowData[airFlowData.length - 1].z)/(airFlowData[airFlowData.length - 1].z - airFlowData[airFlowData.length - 5].z)
+  //x축 속도
+  //(airFlowData[airFlowData.length - 1].x - airFlowData[airFlowData.length - 5].x) / 2
+  //y축 속도
+  //(airFlowData[airFlowData.length - 1].y - airFlowData[airFlowData.length - 5].y) / 2
+  //낙하지점 예측
+  if((airFlowData.length > 10) && ((airFlowData[airFlowData.length - 5].z - airFlowData[airFlowData.length - 1].z) > 0) ){
+ expectaion_fall = [
+  (airFlowData[airFlowData.length - 1].z)*(-airFlowData[airFlowData.length - 5].x + airFlowData[airFlowData.length - 1].x) /
+  (airFlowData[airFlowData.length - 5].z - airFlowData[airFlowData.length - 1].z)
+  -Number(modify_obj['x']),
+  (airFlowData[airFlowData.length - 1].z)*(airFlowData[airFlowData.length - 5].y - airFlowData[airFlowData.length - 1].y) /
+  (airFlowData[airFlowData.length - 5].z - airFlowData[airFlowData.length - 1].z)
+  +Number(modify_obj['y'])]
+  }
 
   points.push(new THREE.Vector3(modify_obj['y'], modify_obj['z'], -modify_obj['x']));
   airFlowData.push({x: -modify_obj['x'], y: modify_obj['y'], z: modify_obj['z'], u: modify_obj['u'], v: modify_obj['v'], w: modify_obj['w']});
@@ -478,15 +499,17 @@ form.addEventListener('submit', function(e) {
     line.geometry = geometry1;
   }
 
-  // 기존의 코드에서 points 배열을 사용하는 부분을 모두 제거합니다.
+  
   lx.innerText = raw_obj[9];
   ly.innerText = raw_obj[10];
   lz.innerText = Math.round(modify_obj['z']);
   // pitch.innerText = modify_obj['pitch'];
   // yaw.innerText = modify_obj['yaw'];
   // roll.innerText = modify_obj['roll'];
-  //ex.innerText = 200;
-  //ey.innerText = 200;
+  if((expectaion_fall[0]!=0) && (expectaion_fall[1]!=0)){
+  ex.innerText = expectaion_fall[0];
+  ey.innerText = expectaion_fall[1];
+  }
   t.innerText = Number(modify_obj['t']);
   h.innerText = Number(modify_obj['h']);
   at.innerText = Number(modify_obj['at']);
@@ -566,7 +589,7 @@ var geometry1;
 const geometry = new THREE.BoxGeometry( 10, 3, 10 );
       const material = new THREE.MeshBasicMaterial( { color: 0xff00ff } );
       const cube = new THREE.Mesh( geometry, material );
-
+      cube.visible = false;
 
 // use the three.js GLTF loader to add the 3D model to the three.js scene
 const loader = new THREE.GLTFLoader();
@@ -593,10 +616,17 @@ function animate(){
   gltf.scene.rotation.y = Number(modify_obj['yaw']);
   gltf.scene.rotation.x = Number(modify_obj['roll']);
   cube.rotation.y += 0.08;
-  cube.position.z = 200; //예상 낙하지점
-  cube.position.x = 200;
 
-  
+    cube.position.z = expectaion_fall[0];
+   //예상 낙하지점 -x좌표이다
+  cube.position.x = expectaion_fall[1];
+    //y좌표이다
+    if((expectaion_fall[0]!=0) && (expectaion_fall[1] != 0))
+    {cube.visible = true;}
+    else{
+      cube.visible = false;
+    }
+      
 //skewt logp
   var newData3 = { x: modify_obj['t'], y: Math.log(modify_obj['at'])/Math.log(10) };
  
