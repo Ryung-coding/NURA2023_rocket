@@ -8,9 +8,9 @@ var airFlowData = [];
 var line = null;
 const THREE = window.THREE;
 var origin_lonlat = [127.07755612, 37.63300324]; //[127.207996, 34.610]; 고흥쪽 좌표
-var altitude_diff = 125; //고도차이
+var altitude_diff = 0; //고도차이 161
 let frameCounter = 0;
-
+var step_now = 1;
 
 var lx = document.getElementById('lx');
 var ly = document.getElementById('ly');
@@ -18,19 +18,26 @@ var lz = document.getElementById('lz');
 // var pitch = document.getElementById('pitch');
 // var yaw = document.getElementById('yaw');
 // var roll = document.getElementById('roll');
-var ex = document.getElementById('ex');
-var ey = document.getElementById('ey');
+//var ex = document.getElementById('ex');
+//var ey = document.getElementById('ey');
 var t = document.getElementById('t');
 var h = document.getElementById('h');
 var at = document.getElementById('at');
 var form = document.getElementById('form');
 var input = document.getElementById('input');
 
+var fuel = document.querySelector('meter');
+var step_1 = document.getElementById('step_1');
+var step_2 = document.getElementById('step_2');
+var step_3 = document.getElementById('step_3');
+var step_4 = document.getElementById('step_4');
+var step_5 = document.getElementById('step_5');
+
 //그래프 시작
 var count = 2000,
     data = [],
     margin = {top: 10, right: 10, bottom: 10, left: 40},
-    width = 400, //- margin.left - margin.right,
+    width = window.innerWidth*0.26, //- margin.left - margin.right,
     height = 180; //- margin.top - margin.bottom;
 
 var xScale = d3.scale.linear()
@@ -86,7 +93,7 @@ var path = svg.append("g")
 var count1 = 2000,
     data1 = [],
     margin1 = {top: 10, right: 10, bottom: 10, left: 40},
-    width1 = 400, //- margin.left - margin.right,
+    width1 = window.innerWidth*0.26, //- margin.left - margin.right,
     height1 = 180; //- margin.top - margin.bottom;
 
 var xScale1 = d3.scale.linear()
@@ -142,8 +149,8 @@ var path1 = svg1.append("g")
 var count2 = 2000,
     data2 = [],
     margin2 = {top: 10, right: 10, bottom: 10, left: 40},
-    width2 = 400, //- margin.left - margin.right,
-    height2 = 202; //- margin.top - margin.bottom;
+    width2 = window.innerWidth*0.26,//400, //- margin.left - margin.right,
+    height2 = 150; //- margin.top - margin.bottom;
 
 var xScale2 = d3.scale.linear()
     .domain([count2-2000, count2])
@@ -171,7 +178,7 @@ svg2.append("defs").append("clipPath")
 
 svg2.append("g")
     .attr("class", "x axis")
-    .attr("transform", "translate(0," + yScale(-400) + ")")
+    .attr("transform", "translate(0," + yScale(-192) + ")")
     .call(d3.svg.axis().scale(xScale2).orient("bottom"))
     .append("text") // x축 이름 추가
     .attr("class", "axis-label")
@@ -199,8 +206,8 @@ var path2 = svg2.append("g")
 var count3 = 3000,
     data3 = [],
     margin3 = {top: 8, right: 10, bottom: 10, left: 30},
-    width3 = 465, //- margin.left - margin.right,
-    height3 = 365; //- margin.top - margin.bottom;
+    width3 = 444, //- margin.left - margin.right,
+    height3 = 350; //- margin.top - margin.bottom;
 
 var xScale3 = d3.scale.linear()
     .domain([-52, 47.5])
@@ -256,8 +263,9 @@ var path3 = svg3.append("g")
 var scene1 = new THREE.Scene();
 var camera1 = new THREE.PerspectiveCamera( 75, 1.7/*window.innerWidth / window.innerHeight*/, 0.1, 1000 );
 var renderer1 = new THREE.WebGLRenderer();
-renderer1.setSize( 520,window.innerHeight*0.4);//window.innerWidth, window.innerHeight );
+renderer1.setSize( 500,window.innerHeight*0.4);//window.innerWidth, window.innerHeight );
 document.getElementById('airflow').appendChild(renderer1.domElement); // 변경된 부분: 그래프를 airflow div에 추가
+
 
 var controls1 = new THREE.OrbitControls( camera1, renderer1.domElement );
 controls1.enableDamping = true;
@@ -314,9 +322,22 @@ form.addEventListener('submit', function(e) {
     console.log("sending OK");
   }
  });
- //points.push(new THREE.Vector3(0,0,0));
+ socket.on('flag', (msg) => {
+  if(msg==='1')
+  {
+    points = [];
+    airFlowData = [];
+    data = [];
+    data1 = [];
+    data2 = [];
+    data3 = [];
+  }
+ })
  socket.on('data', (msg) => {
+ // console.log(msg);
   raw_obj = msg.split('|') 
+  if((Math.abs(Math.round(111220*(raw_obj[9] - origin_lonlat[1]))) < 5000 )
+  && ((Math.abs(Math.round(91560*(raw_obj[10] - origin_lonlat[0]))) < 5000))) {
   modify_obj = {
     x: Math.round(111220*(raw_obj[9] - origin_lonlat[1])),
     y: Math.round(91560*(raw_obj[10] - origin_lonlat[0])), 
@@ -329,19 +350,51 @@ form.addEventListener('submit', function(e) {
     yaw : Math.atan(Math.sqrt(raw_obj[0]*raw_obj[0] + raw_obj[2]*raw_obj[2]) / (-raw_obj[1]) ), 
     t : raw_obj[13], 
     h : raw_obj[14], 
-    at : raw_obj[11] 
+    at : (raw_obj[11]*10).toFixed(1) //이거 10배해야함
   };
+
+  //준비 -> 상승
+  if((Math.sqrt(raw_obj[0]*raw_obj[0]+raw_obj[1]*raw_obj[1]+raw_obj[2]*raw_obj[2])
+    > 9.8*4) && (step_now == 1))
+    {
+      step_now = 2;
+      step();
+      var fuel_val = setInterval(fuel_gauge, 50); //연료 게이지 닳기시작
+    }
   
+  //상승 -> 하강
+  if((airFlowData.length >= 10) && 
+  ((airFlowData[airFlowData.length - 1].z + airFlowData[airFlowData.length - 2].z + airFlowData[airFlowData.length - 3].z) / 3
+   < (airFlowData[airFlowData.length - 10].z + airFlowData[airFlowData.length - 9].z) + airFlowData[airFlowData.length - 8].z / 3)
+  && (step_now == 2))
+  {
+    step_now = 3;
+    step();
+  }
 
+  //하강 -> 사출
+  if((Math.sqrt(raw_obj[0]*raw_obj[0]+raw_obj[1]*raw_obj[1]+raw_obj[2]*raw_obj[2])
+  > 9.8*2) && (step_now == 3))
+  {
+    step_now = 4;
+    step();
+  }
 
+  //사출 -> 착륙
+  if((modify_obj['z'] <= 5) && (step_now >= 3))
+  {
+    step_now = 5;
+    step();
+  }
+  }
 
   points.push(new THREE.Vector3(modify_obj['y'], modify_obj['z'], -modify_obj['x']));
   airFlowData.push({x: -modify_obj['x'], y: modify_obj['y'], z: modify_obj['z'], u: modify_obj['u'], v: modify_obj['v'], w: modify_obj['w']});
     // pop the old data point off the front
-    if (points.length > 2000) {
+    if (points.length > 10000) {
       points.shift();
     }
-    if (airFlowData.length > 2000) {
+    if (airFlowData.length > 10000) {
       airFlowData.shift();
     }
   //console.log(modify_obj);
@@ -367,14 +420,14 @@ form.addEventListener('submit', function(e) {
   // pitch.innerText = modify_obj['pitch'];
   // yaw.innerText = modify_obj['yaw'];
   // roll.innerText = modify_obj['roll'];
-  ex.innerText = 200;
-  ey.innerText = 200;
+  //ex.innerText = 200;
+  //ey.innerText = 200;
   t.innerText = Number(modify_obj['t']);
   h.innerText = Number(modify_obj['h']);
   at.innerText = Number(modify_obj['at']);
  // console.log(airFlowData); // airFlowData를 콘솔에 출력
 
- 
+
 
 });
 
@@ -456,6 +509,7 @@ loader.load(
 //'/rocket',
 '/sci-fi_rocket/scene.gltf',
 (gltf) => {
+ 
 //this.scene.add(gltf.scene);
 this.scene.add(gltf.scene);
 this.scene.add( cube );
@@ -504,6 +558,7 @@ function animate(){
 
 }
 animate();
+
 
 
 function graph_time(){
@@ -586,6 +641,65 @@ function graph_time(){
 }
 setInterval(graph_time, 100);
 
+var fuel_timer = 100;
+var step_var = 1;
+function fuel_gauge()
+{
+  if(fuel_timer<3){
+  clearInterval(fuel_val);
+  //fuel_timer = 100;
+  
+  }
+
+  fuel_timer -= 2;
+  fuel.value = fuel_timer;
+  
+}
+
+
+function step() {
+  
+  //if(step_var == 6)
+  //step_var = 1;
+  if(step_var == 1){
+  step_1.style.background = 'red';
+  step_2.style.background = 'rgb(106, 115, 135)';
+  step_3.style.background = 'rgb(106, 115, 135)';
+  step_4.style.background = 'rgb(106, 115, 135)';
+  step_5.style.background = 'rgb(106, 115, 135)';
+  }
+  if(step_var == 2){
+  step_2.style.background = 'orange';
+  step_1.style.background = 'rgb(106, 115, 135)';
+  step_3.style.background = 'rgb(106, 115, 135)';
+  step_4.style.background = 'rgb(106, 115, 135)';
+  step_5.style.background = 'rgb(106, 115, 135)';
+  }
+  if(step_var == 3){
+  step_3.style.background = 'green';
+  step_1.style.background = 'rgb(106, 115, 135)';
+  step_2.style.background = 'rgb(106, 115, 135)';
+  step_4.style.background = 'rgb(106, 115, 135)';
+  step_5.style.background = 'rgb(106, 115, 135)';
+  }
+  if(step_var == 4){
+  step_4.style.background = 'blue';
+  step_1.style.background = 'rgb(106, 115, 135)';
+  step_2.style.background = 'rgb(106, 115, 135)';
+  step_3.style.background = 'rgb(106, 115, 135)';
+  step_5.style.background = 'rgb(106, 115, 135)';
+  }
+  if(step_var == 5){
+  step_5.style.background = 'purple';
+  step_1.style.background = 'rgb(106, 115, 135)';
+  step_2.style.background = 'rgb(106, 115, 135)';
+  step_3.style.background = 'rgb(106, 115, 135)';
+  step_4.style.background = 'rgb(106, 115, 135)';
+  }
+ // step_var++;
+}
+//setInterval(step, 1000);
+
 var material1 = new THREE.MeshBasicMaterial({ color: 0xffff00 });
 
 function airflowdraw(){
@@ -604,8 +718,8 @@ vertices = [];
 indices = [];
 }
 setInterval(airflowdraw, 1000);
+  }
 
-}
 //,
 //undefined, function(error) {
 //  console.error(error);

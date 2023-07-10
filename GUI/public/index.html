@@ -28,9 +28,10 @@
 		</script>
   <style>
     body{
-      background-color: rgb(4, 35, 53);
+      background-color: rgb(54, 58, 69); /*rgb(4, 35, 53);*/
       margin : 0;
-      /*overflow: hidden;*/
+     
+      /* overflow: hidden; */
     }
 		#messages {
 			color: black;
@@ -52,7 +53,21 @@
       line-height: 10px;
       color : white;
     }
-
+    .widget {
+      background-color: rgb(39, 43, 52);
+      border-radius: 10px;
+    }
+    .five_step {
+      border-radius: 10px;
+      height: 75%;
+      width : 15%;
+      margin : 11px;
+      background-color: rgb(106, 115, 135);
+      float: left;
+      text-align: center;
+      line-height: 65px;
+      color: white;
+    }
 		.data {
 			font-size: small;
       font-weight: bold;
@@ -92,24 +107,34 @@
  </head>
  <body>
 	
-    <div id="map" style="
+    <div class="widget" style="
+    width : 30vw; height : 90vh;
+    float: left;
     margin-top : 2vh;
     margin-bottom: 2vh;
-    margin-left : 1vw;
-    width : 30vw; height : 96vh;
-    float: left;
-    "></div>
+    margin-left : 2vw;
+    
+    ">
+    <div id="map" style="
+    width : 94%; height : 96%;
+    margin : 2.8%;
+    border-radius: 10px;
+    ">
+      </div>
+    </div>
     <div style="
     margin-top : 2vh;
     margin-bottom: 2vh;
-    width : 30vw; height : 96vh;
+    width : 30vw; height : 700px;
     float: left; /*border: 1px solid red;*/
     margin-left: 10px;
+    
     ">
-      <div style="
+      <div class="widget" 
+      style="
       width : 100%; height : 85%;
       float: left; /*border: 1px solid red;*/
-      background-color: rgb(6, 56, 85);
+     
       ">
       <div id="chart" ></div>
       <div id="chart1"></div>
@@ -119,8 +144,8 @@
       width : 100%; height : 13%;
       float: left; /*border: 1px solid red;*/
       ">
-    <div style="margin-left : 5px; margin-top : 5px;width : 50%; height : 70%; float : left;  float: left; /*border: 1px solid red;*/">
-      <p style="margin-top: 2px;"> 현재 좌표(
+    <div class="widget" style="padding: 10px; margin-top : 5px;width : 50%; height : 70%; float : left; /*border: 1px solid red;*/">
+      <p > 현재 좌표(
       <span id="ly" class="data"></span>,
       <span id="lx" class="data"></span>,
       <span id="lz" class="data"></span>)
@@ -130,29 +155,31 @@
       <span id="yaw" class="data"></span>,
       <span id="roll" class="data"></span>)
     </p> -->
-    <p>예상낙하지점 좌표(
+    <!--<p>예상낙하지점 좌표(
       <span id="ex" class="data"></span>,
-      <span id="ey" class="data"></span>)</p> </div>
+      <span id="ey" class="data"></span>)</p> -->
+      <p style="margin-top: 2px;">온도
+        <span id="t" class="data"></span>°C</p>
+    </div>
 
-      <div style="margin-left : 5px; margin-top: 5px; width : 40%; height : 70%;text-align: right; float: left; /*border: 1px solid red;*/">
-       <p style="margin-top: 2px;">온도
-    <span id="t" class="data"></span>°C</p>
-	  <p>습도
+    <div class="widget" style="padding: 10px; margin-left : 5px; margin-top : 5px;width : 40%; height : 70%; float : right; /*border: 1px solid red;*/">
+    
+	  <p >습도
       <span id="h" class="data"></span>%</p>
       <p>기압
     <span id="at" class="data"></span>hPa</p>
       </div>
-      <form id="form" action="">
-        <input style="margin-left: 10px; margin-top : 1px; width : 83%;
-        background-color: rgb(240, 240, 240);
-        border: 1px solid black;
-        border-radius: 10px;" id="input" autocomplete="off" /><button
-        style="margin-left: 3px; margin-top : 1px; width : 3vw;
-        background-color: rgb(240, 240, 240);
-        border: 1px solid black;
-        border-radius: 10px; font-weight: bold;" >전송</button>
-      </form>
+      <meter min="0" low="30" high="50" max="100" optimum="100" value="100"
+      style="width: 100%; height: 30px;"></meter>
+     
+      <div style="width: 100%; height : 90px; background-color: rgb(39, 43, 52); border-radius: 10px;">
+        <div class="five_step" id="step_1" style="background-color: red;">준비</div>
+        <div class="five_step" id="step_2">상승</div>
+        <div class="five_step" id="step_3">하강</div>
+        <div class="five_step" id="step_4">사출</div>
+        <div class="five_step" id="step_5">착륙</div>
       </div>
+       </div>
       
 
       </div>
@@ -160,91 +187,50 @@
    margin-top: 2vh;
    margin-bottom: 1vh;
    margin-left : 1vw;
-   width : 34vw; height : 96vh;
+   width : 525px; height : 96vh;
    float: left; /*border: 1px solid red;*/
    ">
-    <div style="
-    width : 100%; height : 44%;
+    <div class="widget" style="
+    width : 100%; height : 45%;
+    
     
     float: left; /*border: 1px solid red;*/
     ">
       
-      <div id="airflow" ></div>
+      <div style="margin : 10px;" id="airflow" ></div>
      
     </div>
-    <div style="
-    width : 100%; height : 56%;
-    
+    <div class="widget" style="
+    width : 100%; height : 400px;
+    margin-top: 10px;
     float: left; /*border: 1px solid red;*/
     position: relative;
     ">
-      <div id="skewt-logp" style="position: absolute; z-index: 2;">
+      <div id="skewt-logp" style=" margin : 11px;position: absolute; z-index: 2;">
         
       </div>
       <img src="Skew-T-color-blank.svg" style=
-        "width : 520px; position: absolute; opacity: 1; z-index: 1;">
+        "width : 496px; margin : 11px; position: absolute; opacity: 1; z-index: 1;  border-radius: 10px;">
     </div>
-   <!--<div id="messages" style="width :20.5vw; height : 100px; background-color: rgb(247, 234, 255);">
-    
-
-    <div
-      style="border-radius: 10px 10px 0px 0px; line-height: 20px; text-align: center; background-color: rgb(204, 127, 255); width:100%; height: 20px;">
-      <div style="line-height: 20px; margin-left: 5px; font-weight: bold;">서울과학기술대학교</div>
-      어쩌구<br>저쩌구
-    </div>
-    
-  </div>-->
-
   
-  <!--
-   <div id="messages" style="background-color: rgb(253, 224, 224);">
-
-    <div
-      style="border-radius: 10px 10px 0px 0px; float: left; background-color: rgb(255, 126, 126); width:100%; height: 20px;">
-      <div style="float: left; line-height: 30px; margin-left: 5px; font-weight: bold;"></div>
-      
-    </div>
-  </div>
-
-  <div id="messages" style="background-color: rgb(255, 243, 221);">
-
-    <div
-      style="border-radius: 10px 10px 0px 0px; float: left; background-color: rgb(255, 207, 117); width:100%; height: 20px;">
-      <div style="float: left; line-height: 30px; margin-left: 5px; font-weight: bold;"></div>
-      
-    </div>
-   
-  </div>
-
-  <div id="messages" style="background-color: rgb(240, 255, 221);">
-
-    <div
-      style="border-radius: 10px 10px 0px 0px; float: left; background-color: rgb(194, 255, 119); width:100%; height: 20px;">
-      <div style="float: left; line-height: 30px; margin-left: 5px; font-weight: bold;"></div>
-     
-      
-    </div>
-    <div>
-      
-    </div>
-  </div>
-  
-  <div id="messages" style="background-color: rgb(226, 255, 253);">
-
-    <div
-      style="border-radius: 10px 10px 0px 0px; float: left; background-color: rgb(121, 255, 246); width:100%; height: 20px;">
-      <div style="float: left; line-height: 30px; margin-left: 5px; font-weight: bold;"></div>
-      
-    </div>
-   
-</div>
--->
 
 </div>
 
     
   </div>
 </div>
+<div class="widget" style="position :absolute; bottom: 0px; width: 100vw; height: 40px; line-height: 30px; border-radius: 0px;">
+  <form id="form" action="" style="text-align: center;">
+    <input style="margin-left: 10px; margin-top : 1px; width : 40%;
+     background-color: rgb(255, 255, 255);
+    border: 1px solid rgb(240, 240, 240);
+    border-radius: 10px;" id="input" autocomplete="off" />
+    <!--<button
+    style="margin-left: 3px; margin-top : 1px; width : 3vw;
+    background-color: rgb(240, 240, 240);
+    border: 1px solid black;
+    border-radius: 10px; font-weight: bold;" >전송</button> -->
+  </form></div>
 <script src="index.js"></script>        
 	
  </body>
