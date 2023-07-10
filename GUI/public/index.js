@@ -11,6 +11,7 @@ var origin_lonlat = [127.07755612, 37.63300324]; //[127.207996, 34.610]; 고흥�
 var altitude_diff = 0; //고도차이 161
 let frameCounter = 0;
 var step_now = 1;
+var flag1 = 0;
 
 var lx = document.getElementById('lx');
 var ly = document.getElementById('ly');
@@ -311,7 +312,65 @@ cube.position.set(0, 0, i);
 scene1.add(cube);
 }
 //air flow log 끝
+var fuel_val;
+var fuel_timer = 100;
+var step_var = 1;
+function fuel_gauge()
+{
+  if(fuel_timer<2){
+  clearInterval(fuel_val);
+  //fuel_timer = 100;
+  
+  }
 
+  fuel_timer -= 2;
+  fuel.value = fuel_timer;
+  
+}
+
+
+function step() {
+  
+  //if(step_var == 6)
+  //step_var = 1;
+  if(step_now == 1){
+  step_1.style.background = 'red';
+  step_2.style.background = 'rgb(106, 115, 135)';
+  step_3.style.background = 'rgb(106, 115, 135)';
+  step_4.style.background = 'rgb(106, 115, 135)';
+  step_5.style.background = 'rgb(106, 115, 135)';
+  }
+  if(step_now == 2){
+  step_2.style.background = 'orange';
+  step_1.style.background = 'rgb(106, 115, 135)';
+  step_3.style.background = 'rgb(106, 115, 135)';
+  step_4.style.background = 'rgb(106, 115, 135)';
+  step_5.style.background = 'rgb(106, 115, 135)';
+  }
+  if(step_now == 3){
+  step_3.style.background = 'green';
+  step_1.style.background = 'rgb(106, 115, 135)';
+  step_2.style.background = 'rgb(106, 115, 135)';
+  step_4.style.background = 'rgb(106, 115, 135)';
+  step_5.style.background = 'rgb(106, 115, 135)';
+  }
+  if(step_now == 4){
+  step_4.style.background = 'blue';
+  step_1.style.background = 'rgb(106, 115, 135)';
+  step_2.style.background = 'rgb(106, 115, 135)';
+  step_3.style.background = 'rgb(106, 115, 135)';
+  step_5.style.background = 'rgb(106, 115, 135)';
+  }
+  if(step_now == 5){
+  step_5.style.background = 'purple';
+  step_1.style.background = 'rgb(106, 115, 135)';
+  step_2.style.background = 'rgb(106, 115, 135)';
+  step_3.style.background = 'rgb(106, 115, 135)';
+  step_4.style.background = 'rgb(106, 115, 135)';
+  }
+ // step_var++;
+}
+//setInterval(step, 1000);
 
 
 form.addEventListener('submit', function(e) {
@@ -331,35 +390,41 @@ form.addEventListener('submit', function(e) {
     data1 = [];
     data2 = [];
     data3 = [];
+    fuel_timer = 100;
+    step_now = 1;
+    step();
   }
+  if(msg==='2')
+  flag1 = 1;
  })
  socket.on('data', (msg) => {
  // console.log(msg);
   raw_obj = msg.split('|') 
   if((Math.abs(Math.round(111220*(raw_obj[9] - origin_lonlat[1]))) < 5000 )
-  && ((Math.abs(Math.round(91560*(raw_obj[10] - origin_lonlat[0]))) < 5000))) {
+  && ((Math.abs(Math.round(91560*(raw_obj[10] - origin_lonlat[0]))) < 5000)) && (flag1 == 0)) {
   modify_obj = {
     x: Math.round(111220*(raw_obj[9] - origin_lonlat[1])),
     y: Math.round(91560*(raw_obj[10] - origin_lonlat[0])), 
     z: Math.round(raw_obj[12]) - altitude_diff,
-    u: Math.round((111220*(raw_obj[9] - origin_lonlat[1])) + raw_obj[6]), 
-    v: Math.round((91560*(raw_obj[10] - origin_lonlat[0])) + raw_obj[7]), 
-    w: Math.round(Math.round(raw_obj[12]) - altitude_diff + Math.sqrt(raw_obj[8] * raw_obj[8] - raw_obj[6] * raw_obj[6] - raw_obj[7] * raw_obj[7])), 
+    u: Math.round((111220*(Number(raw_obj[9]) - origin_lonlat[1])) + Number(raw_obj[6])), 
+    v: Math.round((91560*(Number(raw_obj[10]) - origin_lonlat[0])) + Number(raw_obj[7])), 
+    w: Math.round(Number(raw_obj[12]) - Number(altitude_diff) + Math.sqrt(Number(raw_obj[8]) * Number(raw_obj[8]) - Number(raw_obj[6]) * Number(raw_obj[6]) - Number(raw_obj[7]) * Number(raw_obj[7]))), 
     roll : Math.atan(raw_obj[0] / Math.sqrt(raw_obj[2]*raw_obj[2] + raw_obj[1]*raw_obj[1])),
     pitch : Math.atan(raw_obj[2] / Math.sqrt(raw_obj[0]*raw_obj[0] + raw_obj[1]*raw_obj[1])),
     yaw : Math.atan(Math.sqrt(raw_obj[0]*raw_obj[0] + raw_obj[2]*raw_obj[2]) / (-raw_obj[1]) ), 
     t : raw_obj[13], 
     h : raw_obj[14], 
-    at : (raw_obj[11]*10).toFixed(1) //이거 10배해야함
+    at : (raw_obj[11]*1).toFixed(1) //이거 10배해야함
   };
-
+  console.log(modify_obj);
+  
   //준비 -> 상승
   if((Math.sqrt(raw_obj[0]*raw_obj[0]+raw_obj[1]*raw_obj[1]+raw_obj[2]*raw_obj[2])
     > 9.8*4) && (step_now == 1))
     {
       step_now = 2;
+      fuel_val = setInterval(fuel_gauge, 50); //연료 게이지 닳기시작
       step();
-      var fuel_val = setInterval(fuel_gauge, 50); //연료 게이지 닳기시작
     }
   
   //상승 -> 하강
@@ -435,7 +500,7 @@ mapboxgl.accessToken = 'pk.eyJ1IjoidGFleW91IiwiYSI6ImNsZHY2ajVkejA4MGszdm5vaWpvd
 const map = new mapboxgl.Map({
 container: 'map',
 // Choose from Mapbox's core styles, or make your own style with Mapbox Studio
-style: 'mapbox://styles/mapbox/satellite-streets-v11',//light-v11
+style: 'mapbox://styles/mapbox/dark-v11',//satellite-streets-v11',//light-v11 dark-v11
 zoom: 17,
 center: [origin_lonlat[0], origin_lonlat[1]],//시선 좌표
 pitch: 60,
@@ -641,64 +706,6 @@ function graph_time(){
 }
 setInterval(graph_time, 100);
 
-var fuel_timer = 100;
-var step_var = 1;
-function fuel_gauge()
-{
-  if(fuel_timer<3){
-  clearInterval(fuel_val);
-  //fuel_timer = 100;
-  
-  }
-
-  fuel_timer -= 2;
-  fuel.value = fuel_timer;
-  
-}
-
-
-function step() {
-  
-  //if(step_var == 6)
-  //step_var = 1;
-  if(step_var == 1){
-  step_1.style.background = 'red';
-  step_2.style.background = 'rgb(106, 115, 135)';
-  step_3.style.background = 'rgb(106, 115, 135)';
-  step_4.style.background = 'rgb(106, 115, 135)';
-  step_5.style.background = 'rgb(106, 115, 135)';
-  }
-  if(step_var == 2){
-  step_2.style.background = 'orange';
-  step_1.style.background = 'rgb(106, 115, 135)';
-  step_3.style.background = 'rgb(106, 115, 135)';
-  step_4.style.background = 'rgb(106, 115, 135)';
-  step_5.style.background = 'rgb(106, 115, 135)';
-  }
-  if(step_var == 3){
-  step_3.style.background = 'green';
-  step_1.style.background = 'rgb(106, 115, 135)';
-  step_2.style.background = 'rgb(106, 115, 135)';
-  step_4.style.background = 'rgb(106, 115, 135)';
-  step_5.style.background = 'rgb(106, 115, 135)';
-  }
-  if(step_var == 4){
-  step_4.style.background = 'blue';
-  step_1.style.background = 'rgb(106, 115, 135)';
-  step_2.style.background = 'rgb(106, 115, 135)';
-  step_3.style.background = 'rgb(106, 115, 135)';
-  step_5.style.background = 'rgb(106, 115, 135)';
-  }
-  if(step_var == 5){
-  step_5.style.background = 'purple';
-  step_1.style.background = 'rgb(106, 115, 135)';
-  step_2.style.background = 'rgb(106, 115, 135)';
-  step_3.style.background = 'rgb(106, 115, 135)';
-  step_4.style.background = 'rgb(106, 115, 135)';
-  }
- // step_var++;
-}
-//setInterval(step, 1000);
 
 var material1 = new THREE.MeshBasicMaterial({ color: 0xffff00 });
 
@@ -706,9 +713,9 @@ function airflowdraw(){
 //air flow log print
   //console.log(airFlowData)
   airFlowData.forEach(function(d, i) {
-    vertices.push(d.x, d.y, d.z);
-    vertices.push(d.x + d.u, d.y + d.v, d.z + d.w);
-    indices.push(i*2, i*2+1);
+    vertices.push(d.y, d.z, d.x);
+    vertices.push(d.v, d.w, -d.u);
+   indices.push(i*2, i*2+1);
   });
   geometry1.setAttribute( 'position', new THREE.Float32BufferAttribute(vertices, 3));
 geometry1.setIndex(indices);

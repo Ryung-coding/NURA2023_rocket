@@ -71,9 +71,10 @@ io.on('connection', (socket) => {
               lineIndex++;
             } else {
               clearInterval(lineInterval);
+              socket.emit('flag', '2');
 			  replayTF = 0;
             }
-          }, 50); // 일정 시간 간격으로 전송. 원래 500
+          }, 1000); // 일정 시간 간격으로 전송. 원래 500
         }
       });
     } else if (msg === 'record') {
