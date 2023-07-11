@@ -39,8 +39,13 @@ var step_5 = document.getElementById('step_5');
 var count = 2000,
     data = [],
     margin = {top: 10, right: 10, bottom: 10, left: 40},
-    width = window.innerWidth*0.26, //- margin.left - margin.right,
     height = 180; //- margin.top - margin.bottom;
+
+    if (matchMedia("screen and (min-width: 600px)").matches) {
+      var width = window.innerWidth*0.26; //- margin.left - margin.right,
+    } else {
+      var width = window.innerWidth*0.8;
+    }
 
 var xScale = d3.scale.linear()
     .domain([count-2000, count])
@@ -95,8 +100,12 @@ var path = svg.append("g")
 var count1 = 2000,
     data1 = [],
     margin1 = {top: 10, right: 10, bottom: 10, left: 40},
-    width1 = window.innerWidth*0.26, //- margin.left - margin.right,
     height1 = 180; //- margin.top - margin.bottom;
+    if (matchMedia("screen and (min-width: 600px)").matches) {
+      var width1 = window.innerWidth*0.26; //- margin.left - margin.right,
+    } else {
+      var width1 = window.innerWidth*0.8;
+    }
 
 var xScale1 = d3.scale.linear()
     .domain([count1-2000, count1])
@@ -151,8 +160,13 @@ var path1 = svg1.append("g")
 var count2 = 2000,
     data2 = [],
     margin2 = {top: 10, right: 10, bottom: 10, left: 40},
-    width2 = window.innerWidth*0.26,//400, //- margin.left - margin.right,
+   //400, //- margin.left - margin.right,
     height2 = 150; //- margin.top - margin.bottom;
+    if (matchMedia("screen and (min-width: 600px)").matches) {
+      var width2 = window.innerWidth*0.26; //- margin.left - margin.right,
+    } else {
+      var width2 = window.innerWidth*0.8;
+    }
 
 var xScale2 = d3.scale.linear()
     .domain([count2-2000, count2])
@@ -205,18 +219,28 @@ var path2 = svg2.append("g")
 //그래프3 끝
 
 //skew-p log-p 시작
-var count3 = 3000,
-    data3 = [],
-    margin3 = {top: 8, right: 10, bottom: 10, left: 30},
-    width3 = 444, //- margin.left - margin.right,
-    height3 = 350; //- margin.top - margin.bottom;
 
+    if (matchMedia("screen and (min-width: 600px)").matches) {
+      // 600px 이상에서 사용할 JavaScript
+      var count3 = 3000,
+      data3 = [],
+      margin3 = {top: 14, right: 12, bottom: 10, left: 47},
+      width3 = 436, //- margin.left - margin.right,
+      height3 = 346; //- margin.top - margin.bottom;
+    } else {
+      // 600px 미만에서 사용할 JavaScript
+      var count3 = 3000,
+      data3 = [],
+      margin3 = {top: 10, right: 12, bottom: 10, left: 36},
+      width3 = 325, //- margin.left - margin.right,
+      height3 = 258; //- margin.top - margin.bottom;
+    }
 var xScale3 = d3.scale.linear()
-    .domain([-52, 47.5])
+    .domain([15, 35])
     .range([0, width3]);
 
 var yScale3 = d3.scale.linear()
-    .domain([3.019, 2])
+    .domain([3.00432, 2.9777])
     .range([height3, 0]);
 
 var lineGenerator3 = d3.svg.line()
@@ -265,7 +289,15 @@ var path3 = svg3.append("g")
 var scene1 = new THREE.Scene();
 var camera1 = new THREE.PerspectiveCamera( 75, 1.7/*window.innerWidth / window.innerHeight*/, 0.1, 1000 );
 var renderer1 = new THREE.WebGLRenderer();
-renderer1.setSize( 500,window.innerHeight*0.4);//window.innerWidth, window.innerHeight );
+if (matchMedia("screen and (min-width: 600px)").matches) {
+  // 600px 이상에서 사용할 JavaScript
+  renderer1.setSize( 500,window.innerHeight*0.4);//window.innerWidth, window.innerHeight );
+
+} else {
+  // 600px 미만에서 사용할 JavaScript
+  renderer1.setSize( window.innerWidth*0.9,window.innerHeight*0.4);//window.innerWidth, window.innerHeight );
+
+}
 document.getElementById('airflow').appendChild(renderer1.domElement); // 변경된 부분: 그래프를 airflow div에 추가
 
 

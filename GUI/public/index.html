@@ -26,95 +26,12 @@
 				}
 			}
 		</script>
-  <style>
-    body{
-      background-color: rgb(54, 58, 69); /*rgb(4, 35, 53);*/
-      margin : 0;
-     
-      /* overflow: hidden; */
-    }
-		#messages {
-			color: black;
-			width: 10vw;
-			height: 200px;
-			float: left;
-			text-align: left;
-			line-height: 10px;
-			font-size: 15px;
-      font-weight: bold;
-      background-color: rgb(240, 240, 240);
-      border-radius: 10px;
-      margin-left : 10px;
-      margin-top: 10px;
-		}
-    p{
-      text-align: left;
-      font-size: small;
-      line-height: 10px;
-      color : white;
-    }
-    .widget {
-      background-color: rgb(39, 43, 52);
-      border-radius: 10px;
-    }
-    .five_step {
-      border-radius: 10px;
-      height: 75%;
-      width : 15%;
-      margin : 11px;
-      background-color: rgb(106, 115, 135);
-      float: left;
-      text-align: center;
-      line-height: 65px;
-      color: white;
-    }
-		.data {
-			font-size: small;
-      font-weight: bold;
-			color: white;
-		}
-	
-	
-    svg {
-      font: 8px sans-serif;
-    }
-    .line {
-      fill: none;
-      stroke: white;
-      stroke-width: 1.5px;
-    }
-    .axis text{
-      stroke : white;
-      stroke-width: 0.3px;
-
-    }
-    .axis path,
-    .axis line {
-      fill: none;
-      stroke: white;
-      color : white;
-      shape-rendering: crispEdges;
-    }
-    path.line {
-  fill: none;
-  stroke: steelblue;
-  stroke-width: 2px;
-}
-
-
-</style>
+  <link rel="stylesheet" href="style.css"/>
 
  </head>
  <body>
 	
-    <div class="widget" style="
-    width : 30vw; height : 90vh;
-    float: left;
-    margin-top : 2vh;
-    margin-bottom: 2vh;
-    margin-left : 2vw;
-    
-    ">
+    <div class="widget" id="_map" >
     <div id="map" style="
     width : 94%; height : 96%;
     margin : 2.8%;
@@ -122,14 +39,7 @@
     ">
       </div>
     </div>
-    <div style="
-    margin-top : 2vh;
-    margin-bottom: 2vh;
-    width : 30vw; height : 700px;
-    float: left; /*border: 1px solid red;*/
-    margin-left: 10px;
-    
-    ">
+    <div id="__chart">
       <div class="widget" 
       style="
       width : 100%; height : 85%;
@@ -162,7 +72,7 @@
      
     </div>
 
-    <div class="widget" style="padding: 10px; margin-left : 5px; margin-top : 5px;width : 35%; height : 70%; float : right; /*border: 1px solid red;*/">
+    <div class="widget" id="data_widget2">
       <p style="margin-top: 2px;">온도
         <span id="t" class="data"></span>°C</p>
 	  <p >습도
@@ -191,36 +101,24 @@
    width : 525px; height : 96vh;
    float: left; /*border: 1px solid red;*/
    ">
-    <div class="widget" style="
-    width : 100%; height : 45%;
-    
-    
-    float: left; /*border: 1px solid red;*/
-    ">
+    <div class="widget" id="_airflow">
       
       <div style="margin : 10px;" id="airflow" ></div>
      
     </div>
-    <div class="widget" style="
-    width : 100%; height : 400px;
-    margin-top: 10px;
-    float: left; /*border: 1px solid red;*/
-    position: relative;
-    ">
+    <div class="widget" id="_skewt-logp">
       <div id="skewt-logp" style=" margin : 11px;position: absolute; z-index: 2;">
         
       </div>
-      <img src="Skew-T-color-blank.svg" style=
-        "width : 496px; margin : 11px; position: absolute; opacity: 1; z-index: 1;  border-radius: 10px;">
+      <img id="skewt-logp_img" src="./skewt_logp.png" >
     </div>
   
 
 </div>
 
-    
   </div>
 </div>
-<div class="widget" style="position :absolute; bottom: 0px; width: 100vw; height: 40px; line-height: 30px; border-radius: 0px;">
+<div class="widget" id="_form">
   <form id="form" action="" style="text-align: center;">
     <input style="margin-left: 10px; margin-top : 1px; width : 40%;
      background-color: rgb(255, 255, 255);
