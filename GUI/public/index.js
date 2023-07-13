@@ -5,7 +5,7 @@ var modify_obj;
 
 var points = [];
 var airFlowData = [];
-var expectaion_fall = [0, 0];
+var expectaion_fall = [0.1234, 0.1234];
 var line = null;
 const THREE = window.THREE;
 var origin_lonlat = [127.07755612, 37.63300324]; //[127.207996, 34.610]; 고흥쪽 좌표
@@ -426,7 +426,7 @@ form.addEventListener('submit', function(e) {
     fuel_timer = 100;
     step_now = 1;
     step();
-    expectaion_fall = [0,0];
+    expectaion_fall = [0.1234,0.1234];
     ex.innerText = ' ';
     ey.innerText = ' ';
   }
@@ -450,12 +450,15 @@ form.addEventListener('submit', function(e) {
     yaw : Math.atan(Math.sqrt(raw_obj[0]*raw_obj[0] + raw_obj[2]*raw_obj[2]) / (-raw_obj[1]) ), 
     t : raw_obj[13], 
     h : raw_obj[14], 
-    at : (raw_obj[11]*1).toFixed(1) //이거 10배해야함
+    at : (raw_obj[11]*1).toFixed(1), //이거 10배해야함
+    ax : Number(raw_obj[0]) * 9.81 /16384,
+    ay : Number(raw_obj[1]) * 9.81 /16384,
+    az : Number(raw_obj[2]) * 9.81 /16384,
   };
-  console.log(modify_obj);
+  //console.log((Math.sqrt(modify_obj['ax'] * modify_obj['ax']+modify_obj['ay'] * modify_obj['ay']+modify_obj['az'] * modify_obj['az'])));
   
   //준비 -> 상승
-  if((Math.sqrt(raw_obj[0]*raw_obj[0]+raw_obj[1]*raw_obj[1]+raw_obj[2]*raw_obj[2])
+  if((Math.sqrt(modify_obj['ax'] * modify_obj['ax']+modify_obj['ay'] * modify_obj['ay']+modify_obj['az'] * modify_obj['az'])
     > 9.8*4) && (step_now == 1))
     {
       step_now = 2;
@@ -474,7 +477,7 @@ form.addEventListener('submit', function(e) {
   }
 
   //하강 -> 사출
-  if((Math.sqrt(raw_obj[0]*raw_obj[0]+raw_obj[1]*raw_obj[1]+raw_obj[2]*raw_obj[2])
+  if((Math.sqrt(modify_obj['ax'] * modify_obj['ax']+modify_obj['ay'] * modify_obj['ay']+modify_obj['az'] * modify_obj['az'])
   > 9.8*2) && (step_now == 3))
   {
     step_now = 4;
@@ -489,6 +492,35 @@ form.addEventListener('submit', function(e) {
   }
   }
   
+
+  function linearRegression(x, y) {
+    let sumX = 0;
+    let sumY = 0;
+    let sumXY = 0;
+    let sumXX = 0;
+    let count = 0;
+
+    let xLen = x.length;
+    for(let i=0;i<xLen;i++){
+        let currentX = x[i];
+        let currentY = y[i];
+        
+        sumX += currentX;
+        sumY += currentY;
+        sumXX += currentX*currentX;
+        sumXY += currentX*currentY;
+        count++;
+    }
+
+    // Least squares method
+    let m = (count*sumXY - sumX*sumY) / (count*sumXX - sumX*sumX);
+    let b = (sumY/count) - (m*sumX)/count;
+
+    return {m: m, b: b};
+}
+
+let tValues = [0, 0.5, 1, 1.5, 2, 2.5, 3]; //3초 선형회귀
+
   //낙하 시간
   //(2*airFlowData[airFlowData.length - 1].z)/(airFlowData[airFlowData.length - 1].z - airFlowData[airFlowData.length - 5].z)
   //x축 속도
@@ -497,13 +529,37 @@ form.addEventListener('submit', function(e) {
   //(airFlowData[airFlowData.length - 1].y - airFlowData[airFlowData.length - 5].y) / 2
   //낙하지점 예측
   if((airFlowData.length > 10) && ((airFlowData[airFlowData.length - 5].z - airFlowData[airFlowData.length - 1].z) > 0) ){
- expectaion_fall = [
-  (airFlowData[airFlowData.length - 1].z)*(-airFlowData[airFlowData.length - 5].x + airFlowData[airFlowData.length - 1].x) /
-  (airFlowData[airFlowData.length - 5].z - airFlowData[airFlowData.length - 1].z)
-  -Number(modify_obj['x']),
-  (airFlowData[airFlowData.length - 1].z)*(airFlowData[airFlowData.length - 5].y - airFlowData[airFlowData.length - 1].y) /
-  (airFlowData[airFlowData.length - 5].z - airFlowData[airFlowData.length - 1].z)
-  +Number(modify_obj['y'])]
+    let xValues = [
+      airFlowData[airFlowData.length - 7].x,
+      airFlowData[airFlowData.length - 6].x,
+      airFlowData[airFlowData.length - 5].x,
+      airFlowData[airFlowData.length - 4].x,
+      airFlowData[airFlowData.length - 3].x,
+      airFlowData[airFlowData.length - 2].x,
+      airFlowData[airFlowData.length - 1].x
+     ];
+     let yValues = [
+      airFlowData[airFlowData.length - 7].y,
+      airFlowData[airFlowData.length - 6].y,
+      airFlowData[airFlowData.length - 5].y,
+      airFlowData[airFlowData.length - 4].y,
+      airFlowData[airFlowData.length - 3].y,
+      airFlowData[airFlowData.length - 2].y,
+      airFlowData[airFlowData.length - 1].y
+     ];
+    let regression_x = linearRegression(tValues, xValues);
+    let regression_y = linearRegression(tValues, yValues);
+    expectaion_fall = [
+      (regression_x.m*( 2*(airFlowData[airFlowData.length - 1].z) / (airFlowData[airFlowData.length - 7].z - airFlowData[airFlowData.length - 1].z)) + regression_x.b).toFixed(1),
+      (regression_y.m*( 2*(airFlowData[airFlowData.length - 1].z) / (airFlowData[airFlowData.length - 7].z - airFlowData[airFlowData.length - 1].y)) + regression_y.b).toFixed(1)
+  //(airFlowData[airFlowData.length - 1].z)*(-airFlowData[airFlowData.length - 5].x + airFlowData[airFlowData.length - 1].x) /
+  //(airFlowData[airFlowData.length - 5].z - airFlowData[airFlowData.length - 1].z)
+  //-Number(modify_obj['x']),
+  //(airFlowData[airFlowData.length - 1].z)*(airFlowData[airFlowData.length - 5].y - airFlowData[airFlowData.length - 1].y) /
+  //(airFlowData[airFlowData.length - 5].z - airFlowData[airFlowData.length - 1].z)
+  //+Number(modify_obj['y'])
+]
+//console.log(expectaion_fall);
   }
 
   points.push(new THREE.Vector3(modify_obj['y'], modify_obj['z'], -modify_obj['x']));
@@ -538,7 +594,7 @@ form.addEventListener('submit', function(e) {
   // pitch.innerText = modify_obj['pitch'];
   // yaw.innerText = modify_obj['yaw'];
   // roll.innerText = modify_obj['roll'];
-  if((expectaion_fall[0]!=0) && (expectaion_fall[1]!=0)){
+  if((expectaion_fall[0]!=0.1234) && (expectaion_fall[1]!=0.1234)){
   ex.innerText = expectaion_fall[0];
   ey.innerText = expectaion_fall[1];
   }
@@ -653,7 +709,7 @@ function animate(){
    //예상 낙하지점 -x좌표이다
   cube.position.x = expectaion_fall[1];
     //y좌표이다
-    if((expectaion_fall[0]!=0) && (expectaion_fall[1] != 0))
+    if((expectaion_fall[0]!=0.1234) && (expectaion_fall[1] != 0.1234))
     {cube.visible = true;}
     else{
       cube.visible = false;

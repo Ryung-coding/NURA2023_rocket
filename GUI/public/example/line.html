@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <script>
+    function linearRegression(x, y) {
+    let sumX = 0;
+    let sumY = 0;
+    let sumXY = 0;
+    let sumXX = 0;
+    let count = 0;
+
+    let xLen = x.length;
+    for(let i=0;i<xLen;i++){
+        let currentX = x[i];
+        let currentY = y[i];
+        
+        sumX += currentX;
+        sumY += currentY;
+        sumXX += currentX*currentX;
+        sumXY += currentX*currentY;
+        count++;
+    }
+
+    // Least squares method
+    let m = (count*sumXY - sumX*sumY) / (count*sumXX - sumX*sumX);
+    let b = (sumY/count) - (m*sumX)/count;
+
+    return {m: m, b: b};
+}
+
+// 예제 사용법:
+let xValues = [1, 2, 3, 4, 5];
+let yValues = [3, 4, 2, 4, 5];
+let regression = linearRegression(xValues, yValues);
+console.log(regression);
+
+    </script>
+</body>
+</html>
