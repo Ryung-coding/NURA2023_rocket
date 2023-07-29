@@ -17,6 +17,10 @@
 #include <SD.h>                 // MicroSDCard 라이브러리
 #define LEN_OF_SENSOR_ARRAY 15  // 센서 값 배열의 길이
 
+#define Criteria_for_evaluating_altitude 1000000000    // 고도 안전 사출 기준 높이
+#define Criteria_for_evaluating_time 5000       // 타이머 사출 기준 시간 
+
+
 // ===================== 센서 객체 선언 ====================
 Adafruit_BMP280 bmp;  // BMP280 객체
 DHT dht(2, DHT22);    // DHT22 객체
@@ -33,36 +37,47 @@ double Temperature, Humidity;               // 온도, 습도
 int16_t ax, ay, az, gx, gy, gz;             // 3축 가속도, 각속도
 float flat, flon, speedGPS, speedGPSx, speedGPSy, courseDegree;   // 위도, 경도, 속도, x축 속도, y축 속도, 각도
 unsigned long age;                          // GPS 정확도
-double speedDP;                             // 차압 센서 속도
+double speedDP, speedZ;                     // 차압 센서 속도
 double prevPressure, prevAltitude;                             
 double prevTemperature, prevHumidity;               
 int16_t prevax, prevay, prevaz, prevgx, prevgy, prevgz;             
-float prevFlat, prevFlon, prevSpeedGPS, prevCourseDegree; 
+float prevFlat, prevFlon, prevSpeedGPS, prevCourseDegree,DegreeYaw; 
 double prevSpeedDP;  
-unsigned long prevAge;     
+unsigned long prevAge;  
+
+double count =0 ;                              //로켓 안전 사출 변수
+
+double Par_Pretime=0;                       //로켓 타이머 사출용 변수
+double Par_Curtime=0;
+
+double Par_Endtime=0;
+
+
+bool Par_flag=true;                        //로켓 타이머 사출용 flag
+bool Par_Endflag=true;
+bool Par_Safeflag=true;
+
 
 bool sendData;                              // 데이터를 보낼지 말지 결정하는 변수
-const char cSTX = 2, cETX = 3;              // 데이터의 시작과 끝을 구분하는 문자             
+const char cSTX = 2, cETX = 3;              // 데이터의 시작과 끝을 구분하는 문자
+unsigned long curTime;                      // 현재 시간을 저장하는 변수             
 
 // ================ MPXV7002DP 관련 상수  =================
 int offset = 0;
 float alpha = 0.1;
 double air = 1.1839;                        //공기밀도 kg/m3
 
-
-
 void setup() {
-  pinMode(LED_BUILTIN, OUTPUT);   // Arduino Mega Pro의 Built-In LED(SDCard 작동 확인용)
-  Serial.begin(2400);             // XBee Mega와의 Serial 통신
-  Serial2.begin(2400);            // Due와의 Serial 통신
+  Serial.begin(2400);   // XBee Mega와의 Serial 통신
+  Serial2.begin(2400);  // Due와의 Serial 통신
   Wire.begin();   
   bmp.begin(0x76);
   dht.begin();
-  Serial1.begin(9600);            // GPS 보드레이트는 9600으로 고정
+  Serial1.begin(9600);  // GPS 보드레이트는 9600으로 고정
   initializeMicroSD();
-  wdt_enable(WDTO_1S);            // Watchdog Timer 1초
+  wdt_enable(WDTO_1S);  // Watchdog Timer 1초
   sendData = true;
-  
+  pinMode(9,OUTPUT);
   for(int i = 0; i < 10; i++){
     offset += analogRead(A0) - 512;
   } offset = offset / 10;
@@ -85,6 +100,7 @@ void loop() {
 // DHT22에서 온도, 습도 값 읽어오기
   Temperature = dht.readTemperature();
   Humidity = dht.readHumidity();
+  curTime = millis();
   
 // MPU9250에서 3축 가속도, 각속도 값 읽어오기
   Wire.beginTransmission(0x68);
@@ -122,13 +138,13 @@ void loop() {
 
 // 센서 값들 배열에 저장하기
   putSensorDataIntoArray();
-
+  Parachute();
+  
 // 시리얼 통신으로 센서 값 배열 보내기, MicroSD에 입력하기
   if (sendData){
     Serial.print(char(cSTX));
     Serial2.print(char(cSTX));
 
-    
     for (int i = 0; i < LEN_OF_SENSOR_ARRAY; i++){
       
       // 데이터가 위도 혹은 경도이면 소수점 아래 6자리까지 전송
@@ -146,13 +162,18 @@ void loop() {
       myFile.print('|');
     }
 
+    Serial.print(getCheckSum(&sensorData[0]));  // 체크섬 계산하여 전송
+    Serial.print('|');
+
+    myFile.print(curTime);
+    myFile.print('|');
+
     // GPS SDCard에 위도, 경도 값 작성
     GPSFile.print("{latlng: new kakao.maps.LatLng(");
     GPSFile.print(sensorData[9], 6);
     GPSFile.print(", ");
     GPSFile.print(sensorData[10], 6);
     GPSFile.println(")},");    
-    GPSFile.close();
 
     // DUE에는 각,가속도, 속도 값만 전송
     for(int i = 0; i < 9; i++){
@@ -168,6 +189,7 @@ void loop() {
     smartdelay(100);
 
     myFile.close(); // 파일을 닫습니다.
+    GPSFile.close();
   }
 }// Loop End
 
@@ -209,6 +231,30 @@ void checkSensorData(){
   else sendData = true;
 }
 
+// Low Pass Filter(float 자료형)
+float floatLowPassFilter(float curData, float prevData, float sensitivity)
+{
+  return curData * sensitivity + prevData * (1 - sensitivity);
+}
+
+// 전송 데이터의 체크섬을 계산
+String getCheckSum(double* Array){
+  String st = "";
+  
+  for (int i = 0; i < 15; i++){
+    if (i == 9 || i == 10) st += String(Array[i], 6);
+    else st += String(Array[i]);
+    st += '|';
+  }
+
+  unsigned char chksum = 0xff;
+  int len = st.length();
+  for (int i = 0; i < len; i++){
+    chksum -= st[i];
+  }
+  return String(chksum, HEX);
+}
+
 
 void putSensorDataIntoArray(){
   // 이전 센서 값에 현재 센서 값 저장
@@ -224,27 +270,29 @@ void putSensorDataIntoArray(){
   sensorData[3] = gx;
   sensorData[4] = gy;
   sensorData[5] = gz;
-  sensorData[6] = speedGPSx;
-  sensorData[7] = speedGPSy;
+  sensorData[6] = Altitude;
+  sensorData[7] = Altitude-prevAltitude;
   sensorData[8] = speedDP;
   sensorData[9] = flat;
   sensorData[10] = flon;
   sensorData[11] = Pressure;
-  sensorData[12] = Altitude;
-  sensorData[13] = Temperature;
-  sensorData[14] = Humidity;
+  sensorData[12] = Par_flag;
+  sensorData[13] = digitalRead(9);
+  sensorData[14] = Par_Curtime-Par_Pretime;
 }
 
 
 // GPS용 딜레이
 static void smartdelay(unsigned long ms){ 
-  unsigned long start = millis();
-  do 
-  {
-    while (Serial1.available())
-      gps.encode(Serial1.read());
-  } while (millis() - start < ms);
+//  unsigned long start = millis();
+//  do 
+//  {
+//    while (Serial1.available())
+//      gps.encode(Serial1.read());
+//  } while (millis() - start < ms);
+  while (Serial1.available()) gps.encode(Serial1.read());
 }
+
 
 
 // MicroSD 모듈을 초기화
@@ -254,10 +302,105 @@ void initializeMicroSD(){
   // Mega 기준 MISO 50, MOSI 51, SCK 52, SC 53
   if (!SD.begin(53)) { // SD카드 모듈을 초기화합니다, 매개변수에 SC 핀 번호 입력
     Serial.println("initialization failed!"); // SD카드 모듈 초기화에 실패하면 에러를 출력합니다.
-    digitalWrite(LED_BUILTIN,LOW);
   }
-  else{
-    Serial.println("initialization done.");
-    digitalWrite(LED_BUILTIN,HIGH);
-  }
+  Serial.println("initialization done.");
 }
+
+
+//낙하산 사출 함수
+void Parachute(){
+
+Par_Curtime = millis();                                                                  //로켓 전원 인가 후 현재 시간 
+
+if((Par_flag==false)&&((Par_Curtime-Par_Pretime>Criteria_for_evaluating_time)&&(Par_Curtime-Par_Pretime<(Criteria_for_evaluating_time+5000))))
+{                                                                                        //[현재 시간 - 로켓 발사 시간]이 [기준 시간] 보다 크고 500ms 동안만
+  
+ digitalWrite(9,HIGH);                                                                   //니크롬선을 가열한다.
+  
+}
+else digitalWrite(9,LOW); 
+
+
+
+//if(((speedDP>5)&&(Par_flag)))                                                               //속도가 처음으로 5m/s를 통과했다면(로켓이 발사된 시간) 
+if(((ay>600)&&(Par_flag)))
+{
+  Par_Pretime=millis();                                                                    //그 때의 시간을 기록한다.
+  Par_flag = false;                                                                        //다시 시간을 기록하는 일이 없도록 off 한다.
+}
+
+
+if(Altitude>Criteria_for_evaluating_altitude) //일정고도 이상이 아니면 타이머 사출 함수를 제외한 낙하산 사출 함수는 작동하지 않는다.
+{
+  
+  if(Altitude-prevAltitude<0)                 //하강 중이라면 count 변수를 1 증가시킨다.
+  {
+    count++;
+  }
+  else                                        //상승 중이라면 count 변수를 1 이상일 때만 1 감소시킨다.
+  {
+    if(count>0)count--;
+  }
+  
+  
+
+  
+  //각도(MPU9250-Y) 기준
+  /*
+  DegreeYaw = 180*atan2(sqrt(ax*ax+az*az),ay)/PI;     //높이, 밑변(지면에서 수직 방향이 y 방향임을 유의)
+
+    
+  if(DegreeYaw>90)                                    //로켓이 90도 이상 기울었다면 count 변수를 1 증가시킨다.
+  {
+    count++;
+  }
+  else                                                //로켓이 90도 이하로 기울었다면 count 변수를 1 이상일 때만 1 감소시킨다.
+  {
+    if(count>0)count--;
+  }
+  */
+
+
+  //차압-GPS 기준
+  /*
+
+  //DegreeDp = 180*acos(sqrt(speedGPSx*speedGPSx+speedGPSy*speedGPSy),speedDP)/PI;//차압센서_속도,GPS_XY 속도로 기울기 구함
+
+  speedZ=sqrt(speedDP*speedDP-(speedGPSx*speedGPSx+speedGPSy*speedGPSy));
+
+  if(speedZ<3)                 //속도가 3m/s 보다 줄어들었다면 count 변수를 1 증가시킨다.
+  {
+    count++;
+  }
+  else                                        //속도가 3m/s 이상이라면 count 변수를 1 이상일 때만 1 감소시킨다.
+  {
+    if(count>0)count--;
+  }
+  */
+
+
+
+
+  if((count>20)&&(Par_Endflag))                                                           //count 변수가 20 이상 되었다면 시간을 기록하고 니크롬선을 가열한다.
+  {
+    digitalWrite(9,HIGH);
+    Par_Endtime=millis();
+    Par_Endflag=false;
+  }           
+  
+  
+  if(((Par_Endflag==false)&&Par_Safeflag)&&((Par_Curtime-Par_Endtime)>500))
+  {
+    digitalWrite(9,LOW);
+    Par_Safeflag=false;
+  }                          // 니크롬선을 가열했고 이후 시간이 500ms 지났다면 니크롬선 가열을 멈춰라
+
+
+  
+  
+}
+
+
+
+
+}                                             //Parachute 함수 끝
