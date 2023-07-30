@@ -17,8 +17,8 @@
 #include <SD.h>                 // MicroSDCard 라이브러리
 #define LEN_OF_SENSOR_ARRAY 15  // 센서 값 배열의 길이
 
-#define Criteria_for_evaluating_altitude 1000000000    // 고도 안전 사출 기준 높이
-#define Criteria_for_evaluating_time 5000       // 타이머 사출 기준 시간 
+#define Criteria_for_evaluating_altitude 17000   // 고도 안전 사출 기준 높이
+#define Criteria_for_evaluating_time 9000       // 타이머 사출 기준 시간 
 
 
 // ===================== 센서 객체 선언 ====================
@@ -56,6 +56,8 @@ double Par_Endtime=0;
 bool Par_flag=true;                        //로켓 타이머 사출용 flag
 bool Par_Endflag=true;
 bool Par_Safeflag=true;
+bool Par_Safeflag2=true;
+
 
 
 bool sendData;                              // 데이터를 보낼지 말지 결정하는 변수
@@ -135,10 +137,10 @@ void loop() {
 
 // 센서 값들이 이상하지 않은지 체크하기
   checkSensorData();
+  Parachute();
 
 // 센서 값들 배열에 저장하기
   putSensorDataIntoArray();
-  Parachute();
   
 // 시리얼 통신으로 센서 값 배열 보내기, MicroSD에 입력하기
   if (sendData){
@@ -270,15 +272,15 @@ void putSensorDataIntoArray(){
   sensorData[3] = gx;
   sensorData[4] = gy;
   sensorData[5] = gz;
-  sensorData[6] = Altitude;
-  sensorData[7] = Altitude-prevAltitude;
+  sensorData[6] = speedGPSx;
+  sensorData[7] = speedGPSy;
   sensorData[8] = speedDP;
   sensorData[9] = flat;
   sensorData[10] = flon;
   sensorData[11] = Pressure;
-  sensorData[12] = Par_flag;
-  sensorData[13] = digitalRead(9);
-  sensorData[14] = Par_Curtime-Par_Pretime;
+  sensorData[12] = Altitude;
+  sensorData[13] = Temperature;
+  sensorData[14] = Humidity;
 }
 
 
@@ -312,28 +314,30 @@ void Parachute(){
 
 Par_Curtime = millis();                                                                  //로켓 전원 인가 후 현재 시간 
 
-if((Par_flag==false)&&((Par_Curtime-Par_Pretime>Criteria_for_evaluating_time)&&(Par_Curtime-Par_Pretime<(Criteria_for_evaluating_time+5000))))
-{                                                                                        //[현재 시간 - 로켓 발사 시간]이 [기준 시간] 보다 크고 500ms 동안만
-  
- digitalWrite(9,HIGH);                                                                   //니크롬선을 가열한다.
-  
-}
-else digitalWrite(9,LOW); 
-
-
-
-//if(((speedDP>5)&&(Par_flag)))                                                               //속도가 처음으로 5m/s를 통과했다면(로켓이 발사된 시간) 
-if(((ay>600)&&(Par_flag)))
+if(((ay>15000)&&(Par_flag)))
 {
   Par_Pretime=millis();                                                                    //그 때의 시간을 기록한다.
   Par_flag = false;                                                                        //다시 시간을 기록하는 일이 없도록 off 한다.
 }
 
+if(((!Par_flag)&&((Par_Curtime-Par_Pretime>Criteria_for_evaluating_time)&&(Par_Curtime-Par_Pretime<(Criteria_for_evaluating_time+3000))))&&(Par_Safeflag))
+{                                                                                        //[현재 시간 - 로켓 발사 시간]이 [기준 시간] 보다 크고 3000ms 동안만
+  
+ digitalWrite(9,HIGH);                                                                   //니크롬선을 가열한다.
+ Par_Safeflag2=false;
 
-if(Altitude>Criteria_for_evaluating_altitude) //일정고도 이상이 아니면 타이머 사출 함수를 제외한 낙하산 사출 함수는 작동하지 않는다.
+}                                                                                        //속도가 처음으로 5m/s를 통과했다면(로켓이 발사된 시간) 
+else
+{
+  if(!Par_Safeflag2)digitalWrite(9,LOW); 
+}
+
+
+
+if(Altitude<Criteria_for_evaluating_altitude) //일정고도 이상이 아니면 타이머 사출 함수를 제외한 낙하산 사출 함수는 작동하지 않는다.
 {
   
-  if(Altitude-prevAltitude<0)                 //하강 중이라면 count 변수를 1 증가시킨다.
+  if((Altitude-prevAltitude<0))                 //하강 중이라면 count 변수를 1 증가시킨다.
   {
     count++;
   }
@@ -342,62 +346,28 @@ if(Altitude>Criteria_for_evaluating_altitude) //일정고도 이상이 아니면
     if(count>0)count--;
   }
   
-  
 
-  
-  //각도(MPU9250-Y) 기준
-  /*
-  DegreeYaw = 180*atan2(sqrt(ax*ax+az*az),ay)/PI;     //높이, 밑변(지면에서 수직 방향이 y 방향임을 유의)
-
-    
-  if(DegreeYaw>90)                                    //로켓이 90도 이상 기울었다면 count 변수를 1 증가시킨다.
+  if((count>5)&&(Par_Endflag))                                                           //count 변수가 20 이상 되었다면 시간을 기록하고 니크롬선을 가열한다.
   {
-    count++;
-  }
-  else                                                //로켓이 90도 이하로 기울었다면 count 변수를 1 이상일 때만 1 감소시킨다.
-  {
-    if(count>0)count--;
-  }
-  */
-
-
-  //차압-GPS 기준
-  /*
-
-  //DegreeDp = 180*acos(sqrt(speedGPSx*speedGPSx+speedGPSy*speedGPSy),speedDP)/PI;//차압센서_속도,GPS_XY 속도로 기울기 구함
-
-  speedZ=sqrt(speedDP*speedDP-(speedGPSx*speedGPSx+speedGPSy*speedGPSy));
-
-  if(speedZ<3)                 //속도가 3m/s 보다 줄어들었다면 count 변수를 1 증가시킨다.
-  {
-    count++;
-  }
-  else                                        //속도가 3m/s 이상이라면 count 변수를 1 이상일 때만 1 감소시킨다.
-  {
-    if(count>0)count--;
-  }
-  */
-
-
-
-
-  if((count>20)&&(Par_Endflag))                                                           //count 변수가 20 이상 되었다면 시간을 기록하고 니크롬선을 가열한다.
-  {
-    digitalWrite(9,HIGH);
     Par_Endtime=millis();
     Par_Endflag=false;
   }           
   
   
-  if(((Par_Endflag==false)&&Par_Safeflag)&&((Par_Curtime-Par_Endtime)>500))
+  if(((!Par_Endflag))&&((Par_Curtime-Par_Endtime)<3000))
   {
-    digitalWrite(9,LOW);
+    digitalWrite(9,HIGH);
     Par_Safeflag=false;
-  }                          // 니크롬선을 가열했고 이후 시간이 500ms 지났다면 니크롬선 가열을 멈춰라
+  }                          // 니크롬선을 가열했고 이후 시간이 3000ms 지났다면 니크롬선 가열을 멈춰라
+
+  else
+  {
+    if(!Par_Safeflag)digitalWrite(9,LOW);
+
+  }
 
 
-  
-  
+
 }
 
 
