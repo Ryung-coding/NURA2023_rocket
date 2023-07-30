@@ -334,7 +334,7 @@ else
 
 
 
-if(Altitude<Criteria_for_evaluating_altitude) //일정고도 이상이 아니면 타이머 사출 함수를 제외한 낙하산 사출 함수는 작동하지 않는다.
+if(Altitude>Criteria_for_evaluating_altitude) //일정고도 이상이 아니면 타이머 사출 함수를 제외한 낙하산 사출 함수는 작동하지 않는다.
 {
   
   if((Altitude-prevAltitude<0))                 //하강 중이라면 count 변수를 1 증가시킨다.
