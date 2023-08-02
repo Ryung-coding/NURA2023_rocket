@@ -17,7 +17,7 @@
 #include <SD.h>                 // MicroSDCard 라이브러리
 #define LEN_OF_SENSOR_ARRAY 15  // 센서 값 배열의 길이
 
-#define Criteria_for_evaluating_altitude 17000   // 고도 안전 사출 기준 높이
+#define Criteria_for_evaluating_altitude 100   // 고도 안전 사출 기준 높이
 #define Criteria_for_evaluating_time 9000       // 타이머 사출 기준 시간 
 
 
@@ -97,7 +97,7 @@ void loop() {
 
 // BMP280에서 기압, 고도 값 읽어오기
   Pressure = bmp.readPressure()/1000;
-  Altitude = bmp.readAltitude(1019.1);
+  Altitude = bmp.readAltitude(1006.95);
 
 // DHT22에서 온도, 습도 값 읽어오기
   Temperature = dht.readTemperature();
@@ -168,6 +168,24 @@ void loop() {
     Serial.print('|');
 
     myFile.print(curTime);
+    myFile.print('|');
+
+    myFile.print(Par_flag);
+    myFile.print('|');
+
+    myFile.print(Par_Endflag);
+    myFile.print('|');
+
+    myFile.print(Par_Safeflag);
+    myFile.print('|');
+
+    myFile.print(Par_Safeflag2);
+    myFile.print('|');
+
+    myFile.print(digitalRead(9));
+    myFile.print('|');
+
+    myFile.print(count);
     myFile.print('|');
 
     // GPS SDCard에 위도, 경도 값 작성
@@ -314,7 +332,7 @@ void Parachute(){
 
 Par_Curtime = millis();                                                                  //로켓 전원 인가 후 현재 시간 
 
-if(((ay>15000)&&(Par_flag)))
+if(((ay>20000)&&(Par_flag)))
 {
   Par_Pretime=millis();                                                                    //그 때의 시간을 기록한다.
   Par_flag = false;                                                                        //다시 시간을 기록하는 일이 없도록 off 한다.
@@ -347,7 +365,7 @@ if(Altitude>Criteria_for_evaluating_altitude) //일정고도 이상이 아니면
   }
   
 
-  if((count>5)&&(Par_Endflag))                                                           //count 변수가 20 이상 되었다면 시간을 기록하고 니크롬선을 가열한다.
+  if((count>3)&&(Par_Endflag))                                                           //count 변수가 20 이상 되었다면 시간을 기록하고 니크롬선을 가열한다.
   {
     Par_Endtime=millis();
     Par_Endflag=false;
