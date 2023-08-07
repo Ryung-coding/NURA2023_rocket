@@ -236,7 +236,7 @@ var path2 = svg2.append("g")
       height3 = 258; //- margin.top - margin.bottom;
     }
 var xScale3 = d3.scale.linear()
-    .domain([35, 55])
+    .domain([15, 35])
     .range([0, width3]);
 
 var yScale3 = d3.scale.linear()
