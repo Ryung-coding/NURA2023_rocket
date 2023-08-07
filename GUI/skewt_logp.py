@@ -16,9 +16,9 @@ skew.plot_mixing_lines()
 skew.ax.set_ylim(1010, 950)  
 
 # Set the temperature limits
-skew.ax.set_xlim(15, 35)  
+skew.ax.set_xlim(35, 55)  
 skew.ax.set_yticks(np.arange(950, 1010+1, 5))
-skew.ax.set_xticks(np.arange(15, 35+1, 1))
+skew.ax.set_xticks(np.arange(35, 55+1, 1))
 
 # Set aspect for the plot to have the y-axis stretched
 skew.ax.set_aspect(600)  # Adjust the value as necessary to change the stretch of the y-axis
