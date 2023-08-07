@@ -8,8 +8,8 @@ var airFlowData = [];
 var expectaion_fall = [0.1234, 0.1234];
 var line = null;
 const THREE = window.THREE;
-var origin_lonlat = [127.07755612, 37.63300324]; //[127.207996, 34.610]; 고흥쪽 좌표
-var altitude_diff = 0; //고도차이 161
+var origin_lonlat = [127.831481, 37.358493]; //37.358493|127.831481 [127.207996, 34.610]; 고흥쪽 좌표
+var altitude_diff = 5; //고도차이 161
 let frameCounter = 0;
 var step_now = 1;
 var flag1 = 0;
@@ -434,10 +434,10 @@ form.addEventListener('submit', function(e) {
   flag1 = 1;
  })
  socket.on('data', (msg) => {
- // console.log(msg);
+ console.log(msg);
   raw_obj = msg.split('|') 
-  if((Math.abs(Math.round(111220*(raw_obj[9] - origin_lonlat[1]))) < 5000 )
-  && ((Math.abs(Math.round(91560*(raw_obj[10] - origin_lonlat[0]))) < 5000)) && (flag1 == 0)) {
+ // if((Math.abs(Math.round(111220*(raw_obj[9] - origin_lonlat[1]))) < 5000 )
+ // && ((Math.abs(Math.round(91560*(raw_obj[10] - origin_lonlat[0]))) < 5000)) && (flag1 == 0)) {
   modify_obj = {
     x: Math.round(111220*(raw_obj[9] - origin_lonlat[1])),
     y: Math.round(91560*(raw_obj[10] - origin_lonlat[0])), 
@@ -450,7 +450,7 @@ form.addEventListener('submit', function(e) {
     yaw : Math.atan(Math.sqrt(raw_obj[0]*raw_obj[0] + raw_obj[2]*raw_obj[2]) / (-raw_obj[1]) ), 
     t : raw_obj[13], 
     h : raw_obj[14], 
-    at : (raw_obj[11]*1).toFixed(1), //이거 10배해야함
+    at : (raw_obj[11]*10).toFixed(1), //kpa로 받을 경우 10배해야함
     ax : Number(raw_obj[0]) * 9.81 /16384,
     ay : Number(raw_obj[1]) * 9.81 /16384,
     az : Number(raw_obj[2]) * 9.81 /16384,
@@ -490,7 +490,7 @@ form.addEventListener('submit', function(e) {
     step_now = 5;
     step();
   }
-  }
+  //}
   
 
   function linearRegression(x, y) {
@@ -611,7 +611,7 @@ mapboxgl.accessToken = 'pk.eyJ1IjoidGFleW91IiwiYSI6ImNsZHY2ajVkejA4MGszdm5vaWpvd
 const map = new mapboxgl.Map({
 container: 'map',
 // Choose from Mapbox's core styles, or make your own style with Mapbox Studio
-style: 'mapbox://styles/mapbox/dark-v11',//satellite-streets-v11',//light-v11 dark-v11
+style: 'mapbox://styles/mapbox/satellite-streets-v11',//satellite-streets-v11',//light-v11 dark-v11
 zoom: 17,
 center: [origin_lonlat[0], origin_lonlat[1]],//시선 좌표
 pitch: 60,

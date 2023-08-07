@@ -44,6 +44,7 @@ io.on('connection', (socket) => {
       });
     }
     socket.emit('data', data);
+    //console.log(data);
 	}
   });
 
@@ -74,7 +75,7 @@ io.on('connection', (socket) => {
               socket.emit('flag', '2');
 			  replayTF = 0;
             }
-          }, 1000); // 일정 시간 간격으로 전송. 원래 500
+          }, 500); // 일정 시간 간격으로 전송. 원래 500
         }
       });
     } else if (msg === 'record') {
