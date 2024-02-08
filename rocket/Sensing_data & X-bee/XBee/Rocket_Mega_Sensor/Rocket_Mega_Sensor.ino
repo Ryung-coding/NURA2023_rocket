@@ -17,9 +17,10 @@
 #include <SD.h>                 // MicroSDCard 라이브러리
 #define LEN_OF_SENSOR_ARRAY 15  // 센서 값 배열의 길이
 
-#define Criteria_for_evaluating_altitude 100   // 고도 안전 사출 기준 높이
-#define Criteria_for_evaluating_time 9000       // 타이머 사출 기준 시간 
+#define Criteria_for_evaluating_altitude 30   // 고도 안전 사출 기준 높이
+#define Criteria_for_evaluating_time 5500       // 타이머 사출 기준 시간 
 
+#define R 0.2870 //공기 이상기체 상수
 
 // ===================== 센서 객체 선언 ====================
 Adafruit_BMP280 bmp;  // BMP280 객체
@@ -66,8 +67,11 @@ unsigned long curTime;                      // 현재 시간을 저장하는 변
 
 // ================ MPXV7002DP 관련 상수  =================
 int offset = 0;
+double pre_v = 0;
 float alpha = 0.1;
-double air = 1.1839;                        //공기밀도 kg/m3
+double pressure =101.32; // 측정 압력(kPa)
+double air_density = 1.204; //공기밀도 kg/m3
+double temp =0;// 측정온도(섭씨)
 
 void setup() {
   Serial.begin(2400);   // XBee Mega와의 Serial 통신
@@ -80,9 +84,11 @@ void setup() {
   wdt_enable(WDTO_1S);  // Watchdog Timer 1초
   sendData = true;
   pinMode(9,OUTPUT);
-  for(int i = 0; i < 10; i++){
+  for(int i = 0;i<10;i++){
     offset += analogRead(A0) - 512;
-  } offset = offset / 10;
+  }
+  offset = offset / 10;
+  air_density = pressure/((temp+273.15)*R);
 }// Setup End
 
 
@@ -127,12 +133,24 @@ void loop() {
 
 // MPXV7002DP에서 속도 값 읽어오기
   float adc = 0;
-  for(int i = 0; i < 100; i++){
+
+  for(int i = 0;i<100;i++){
     adc += analogRead(A0) - offset;
-  } adc = adc/100;
+  }
+  adc = adc/100;
+
+  double v = 0;
   //  512
-  if (adc > 514)      speedDP = sqrt((2000*(5*adc/1023.0 - 2.5))/air);   
-  else if (adc < 510) speedDP = -sqrt((-2000*(5*adc/1023.0 - 2.5))/air);
+  if(adc > 514){
+    v = sqrt((2000*(5*adc/1023.0 - 2.5))/air_density); 
+  }else if(adc < 510){
+    v = -sqrt((-2000*(5*adc/1023.0 - 2.5))/air_density); 
+  }
+
+  double filltered_v = pre_v*(1-alpha) + v*alpha;
+  pre_v = filltered_v;
+
+  speedDP = v;
 
 
 // 센서 값들이 이상하지 않은지 체크하기
@@ -297,8 +315,11 @@ void putSensorDataIntoArray(){
   sensorData[10] = flon;
   sensorData[11] = Pressure;
   sensorData[12] = Altitude;
-  sensorData[13] = Temperature;
-  sensorData[14] = Humidity;
+//  sensorData[13] = Temperature;
+//  sensorData[14] = Humidity;
+  sensorData[13] = Par_flag;
+  sensorData[14] = digitalRead(9);
+
 }
 
 
@@ -332,7 +353,7 @@ void Parachute(){
 
 Par_Curtime = millis();                                                                  //로켓 전원 인가 후 현재 시간 
 
-if(((ay>20000)&&(Par_flag)))
+if(((ay>600)&&(Par_flag)))
 {
   Par_Pretime=millis();                                                                    //그 때의 시간을 기록한다.
   Par_flag = false;                                                                        //다시 시간을 기록하는 일이 없도록 off 한다.
